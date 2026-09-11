@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 // Constants
-const MODELS = require("../constants/MODELS");
+const MODELS = require("../../constants/MODELS");
 
 const AttachmentSchema = new mongoose.Schema(
   {

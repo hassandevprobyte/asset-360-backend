@@ -1,8 +1,8 @@
 const Joi = require("joi");
-const { objectId } = require("../index");
+const { objectId } = require("../../config");
 
 // Constants
-const MODELS = require("../../../constants/MODELS");
+const MODELS = require("../../constants/MODELS");
 
 exports.getAttachmentById = objectId.required();
 

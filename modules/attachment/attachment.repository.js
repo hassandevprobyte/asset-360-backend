@@ -1,7 +1,7 @@
-const Attachment = require("../model/Attachment");
+const Attachment = require("./attachment.model");
 
 // Utilities
-const normalizeToArray = require("../utils/normalizeToArray");
+const normalizeToArray = require("../../utils/normalizeToArray");
 
 exports.getAttachmentById = async (attachmentId) => {
   return Attachment.findById(attachmentId).lean();

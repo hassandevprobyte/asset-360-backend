@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const assetService = require("./asset.service");
 
 // Scope
-const assetScope = require("../scopes/assetScope");
+const assetScope = require("./asset.scope");
 
 // @desc    Get assets with pagination
 // @route   GET /api/v1/assets

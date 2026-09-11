@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 
 // Middlewares
-const protect = require("../middleware/authMiddleware");
 const checkPermissions = require("../middleware/checkPermissions");
 const queryFilters = require("../middleware/queryFilters");
 
@@ -12,10 +11,11 @@ const MODELS = require("../constants/MODELS");
 const routes = [
   { path: "/assets", resource: MODELS.ASSET, route: require("./asset/asset.route") },
   { path: "/attachments", resource: MODELS.ATTACHMENT, route: require("./attachment/attachment.route") },
+  { path: "/roles", resource: MODELS.ROLE, route: require("./role/role.route") },
 ];
 
 routes.forEach((route) => {
-  const middlewares = [protect];
+  const middlewares = [];
 
   if (route.resource) {
     middlewares.push(checkPermissions(route.resource));

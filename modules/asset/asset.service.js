@@ -7,12 +7,6 @@ const assetRepository = require("./asset.repository");
 const joi = require("../../config");
 const joiSchema = require("./asset.schema");
 const assetValidation = require("./asset.validation");
-const companyValidation = require("../validations/company");
-const employeeValidation = require("../validations/employee");
-const picklistValidation = require("../validations/picklist");
-
-// Helpers
-const groupHelpers = require("../helpers/groupHelpers");
 
 // Utilities
 const excel = require("../../utils/excel");

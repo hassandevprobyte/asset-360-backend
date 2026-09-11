@@ -10,6 +10,7 @@ const compression = require("compression");
 const app = express();
 
 const { errorHandler } = require("./middleware/errorHandler");
+const bootstrap = require("./bootstrap");
 const { corsOptions, env } = require("./config");
 const backup = require("./config/backup");
 const pagination = require("./middleware/pagination");
@@ -46,6 +47,8 @@ app.use((req, res) => {
 
 const startServer = async () => {
   try {
+    await bootstrap();
+
     backup();
 
     app.listen(env.PORT, () => {
