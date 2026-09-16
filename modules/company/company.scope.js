@@ -1,11 +1,11 @@
 const Boom = require("@hapi/boom");
 
 // Validations
-const companyValidation = require("../validations/company");
+const companyValidation = require("./company.validation");
 
 // Constants
-const SCOPE = require("../constants/SCOPE");
-const message = require("../constants/MESSAGE");
+const SCOPE = require("../../constants/SCOPE");
+const message = require("../../constants/MESSAGE");
 
 exports.scope = (authUser) => {
   const userScope = authUser.effectiveScope;

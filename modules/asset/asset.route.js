@@ -5,6 +5,7 @@ const router = express.Router();
 const assetController = require("./asset.controller");
 
 router.route("/").get(assetController.getAssetsWithPagination).post(assetController.createAsset);
+router.route("/all").get(assetController.getAllAssets);
 router.get("/export", assetController.exportAssets);
 router.get("/summary/byGroup", assetController.getAssetsSummaryByGroup);
 router.route("/:id").get(assetController.getAssetById).patch(assetController.updateAsset).delete(assetController.deleteAsset);

@@ -18,6 +18,10 @@ const isValidObjectId = require("../../utils/isValidObjectId");
 // Constants
 const MODELS = require("../../constants/MODELS");
 
+exports.getAllAssets = async (filters) => {
+  return assetRepository.getAllAssets(filters);
+};
+
 exports.getAssetsWithPagination = async (payload) => {
   const { filters, page, pageSize, sort } = payload;
   const offset = (page - 1) * pageSize;

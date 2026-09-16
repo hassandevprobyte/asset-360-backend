@@ -1,11 +1,11 @@
 const Boom = require("@hapi/boom");
 
 // Validations
-const userValidation = require("../validations/user");
+const userValidation = require("./user.validation");
 
 // Constants
-const SCOPE = require("../constants/SCOPE");
-const message = require("../constants/MESSAGE");
+const SCOPE = require("../../constants/SCOPE");
+const message = require("../../constants/MESSAGE");
 
 const normalizeToArray = (value) => {
   if (!value) return [];

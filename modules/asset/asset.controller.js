@@ -6,6 +6,15 @@ const assetService = require("./asset.service");
 // Scope
 const assetScope = require("./asset.scope");
 
+// @desc    Get all assets
+// @route   GET /api/v1/assets/all
+// @access  Private
+exports.getAllAssets = asyncHandler(async (req, res) => {
+  const data = await assetService.getAllAssets(req.filters);
+
+  res.status(200).json(data);
+});
+
 // @desc    Get assets with pagination
 // @route   GET /api/v1/assets
 // @access  Private
