@@ -15,7 +15,7 @@ const message = require("../constants/MESSAGE");
 const { env } = require("../config");
 
 const protect = asyncHandler(async (req, res, next) => {
-  const [scheme, token] = req.cookies?.accessToken.split(" ") || [];
+  const [scheme, token] = req.cookies?.accessToken?.split(" ") || [];
 
   if (scheme !== "Bearer" || !token) {
     throw Boom.unauthorized(`${message.error.auth.unauthorized}, no token provided`);

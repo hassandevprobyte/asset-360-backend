@@ -72,6 +72,27 @@ exports.createAsset = async (payload) => {
     await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.location);
   }
 
+  if (validatedPayload.warranty) {
+    if (validatedPayload.warranty.provider) {
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.warranty.provider);
+    }
+
+    // If warranty is disabled, don't store unnecessary warranty data
+    if (!validatedPayload.warranty.isWarrantied) {
+      delete validatedPayload.warranty;
+    }
+  }
+
+  // Lifecycle
+  if (validatedPayload.lifecycle?.disposalReason) {
+    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.lifecycle.disposalReason);
+  }
+
+  // Expiry
+  if (!validatedPayload.hasExpiry) {
+    delete validatedPayload.expiryDate;
+  }
+
   return assetRepository.createAsset(validatedPayload);
 };
 
@@ -133,6 +154,16 @@ exports.updateAsset = async (payload) => {
     updatePayload.description = validatedPayload.description;
   }
 
+  if (validatedPayload.serialNumber && validatedPayload.serialNumber !== existingAsset.serialNumber) {
+    updatePayload.serialNumber = validatedPayload.serialNumber;
+  }
+
+  if (validatedPayload.condition && validatedPayload.condition !== existingCondition) {
+    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.condition);
+
+    updatePayload.condition = validatedPayload.condition;
+  }
+
   if (validatedPayload.expiryDate && !isSameDay(validatedPayload.expiryDate, existingAsset.expiryDate)) {
     updatePayload.expiryDate = validatedPayload.expiryDate;
   }
@@ -157,6 +188,28 @@ exports.updateAsset = async (payload) => {
     if (!requiresEmployee && existingAsset.employee) {
       updatePayload.$unset = { ...updatePayload.$unset, employee: "" };
     }
+  }
+
+  if (validatedPayload.warranty && !lodash.isEqual(validatedPayload.warranty, existingAsset.warranty)) {
+    if (validatedPayload.warranty?.provider) {
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(warranty.provider);
+    }
+
+    if (validatedPayload.warranty?.isWarrantied === false) {
+      updatePayload.warranty = {
+        isWarrantied: false,
+      };
+    } else {
+      updatePayload.warranty = validatedPayload.warranty;
+    }
+  }
+
+  if (validatedPayload.lifecycle && !lodash.isEqual(validatedPayload.lifecycle, existingAsset.lifecycle)) {
+    if (validatedPayload.lifecycle?.disposalReason) {
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(lifecycle.disposalReason);
+    }
+
+    updatePayload.lifecycle = validatedPayload.lifecycle;
   }
 
   return assetRepository.updateAssetById(validatedPayload.id, updatePayload);

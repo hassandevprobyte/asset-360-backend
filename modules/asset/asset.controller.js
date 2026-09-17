@@ -3,9 +3,6 @@ const asyncHandler = require("express-async-handler");
 // Services
 const assetService = require("./asset.service");
 
-// Scope
-const assetScope = require("./asset.scope");
-
 // @desc    Get all assets
 // @route   GET /api/v1/assets/all
 // @access  Private
@@ -50,8 +47,6 @@ exports.getAssetsSummaryByGroup = asyncHandler(async (req, res) => {
 // @route   GET /api/v1/assets/:id
 // @access  Private
 exports.getAssetById = asyncHandler(async (req, res) => {
-  await assetScope.authorizeByScope(req.user, req.params.id);
-
   const data = await assetService.getAssetById(req.params.id);
 
   res.status(200).json(data);
@@ -73,6 +68,10 @@ exports.createAsset = asyncHandler(async (req, res) => {
     hasExpiry: req.body.hasExpiry,
     expiryDate: req.body.expiryDate,
     description: req.body.description,
+    serialNumber: req.body.serialNumber,
+    condition: req.body.condition,
+    warranty: req.body.warranty,
+    lifecycle: req.body.lifecycle,
     createdBy: req.user._id,
   };
 
@@ -85,8 +84,6 @@ exports.createAsset = asyncHandler(async (req, res) => {
 // @route   PATCH /api/v1/assets/:id
 // @access  Private
 exports.updateAsset = asyncHandler(async (req, res) => {
-  await assetScope.authorizeByScope(req.user, req.params.id);
-
   const payload = {
     id: req.params.id,
     company: req.body.company,
@@ -100,6 +97,10 @@ exports.updateAsset = asyncHandler(async (req, res) => {
     hasExpiry: req.body.hasExpiry,
     expiryDate: req.body.expiryDate,
     description: req.body.description,
+    serialNumber: req.body.serialNumber,
+    condition: req.body.condition,
+    warranty: req.body.warranty,
+    lifecycle: req.body.lifecycle,
   };
 
   const data = await assetService.updateAsset(payload);
@@ -111,8 +112,6 @@ exports.updateAsset = asyncHandler(async (req, res) => {
 // @route   DELETE /api/v1/assets/:id
 // @access  Private
 exports.deleteAsset = asyncHandler(async (req, res) => {
-  await assetScope.authorizeByScope(req.user, req.params.id);
-
   const data = await assetService.deleteAsset(req.params.id);
 
   res.status(200).json(data);

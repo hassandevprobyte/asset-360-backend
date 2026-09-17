@@ -1,6 +1,86 @@
 const mongoose = require("mongoose");
 
-const AssetSchema = new mongoose.Schema(
+// Constants
+const MODELS = require("../../constants/MODELS");
+
+const warrantySchema = {
+  isWarrantied: {
+    type: Boolean,
+    default: false,
+  },
+  startDate: {
+    type: Date,
+    required: [
+      function () {
+        return this.isWarrantied;
+      },
+      "Start date is required",
+    ],
+  },
+  endDate: {
+    type: Date,
+    required: [
+      function () {
+        return this.isWarrantied;
+      },
+      "End date is required",
+    ],
+  },
+  provider: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: MODELS.PICKLIST,
+  },
+};
+
+const lifecycleSchema = {
+  acquiredAt: {
+    type: Date,
+    required: [true, "Acquired date is required"],
+  },
+  activatedAt: {
+    type: Date,
+    validate: {
+      validator: function (v) {
+        return !v || v >= this.acquiredAt;
+      },
+      message: "Activated date must be after acquired date",
+    },
+  },
+  retiredAt: {
+    type: Date,
+    validate: {
+      validator: function (v) {
+        return !v || v >= this.activatedAt;
+      },
+      message: "Retired date must be after activated date",
+    },
+  },
+  disposedAt: {
+    type: Date,
+    validate: {
+      validator: function (v) {
+        return !v || v >= this.retiredAt;
+      },
+      message: "Disposed date must be after retired date",
+    },
+  },
+  disposalReason: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: MODELS.PICKLIST,
+    required: [
+      function () {
+        return !!this.disposedAt;
+      },
+      "Disposal reason is required",
+    ],
+  },
+  disposalAmount: {
+    type: Number,
+    min: 0,
+  },
+};
+
+const schema = new mongoose.Schema(
   {
     tag: {
       type: String,
@@ -10,12 +90,12 @@ const AssetSchema = new mongoose.Schema(
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
+      ref: MODELS.COMPANY,
       required: [true, "company is required"],
     },
     location: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Picklist",
+      ref: MODELS.PICKLIST,
     },
     employee: {
       type: mongoose.Schema.Types.ObjectId,
@@ -23,17 +103,17 @@ const AssetSchema = new mongoose.Schema(
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Picklist",
+      ref: MODELS.PICKLIST,
       required: [true, "category is required"],
     },
     subCategory: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Picklist",
+      ref: MODELS.PICKLIST,
       required: [true, "sub category is required"],
     },
     status: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Picklist",
+      ref: MODELS.PICKLIST,
     },
     purchaseAmount: {
       type: Number,
@@ -56,21 +136,34 @@ const AssetSchema = new mongoose.Schema(
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "createdBy is required"],
+      ref: MODELS.USER,
+      required: [true, "created by is required"],
     },
+
+    // TODO: New Fields
+    serialNumber: {
+      type: String,
+      trim: true,
+      index: true,
+    },
+    condition: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: MODELS.PICKLIST,
+    },
+    warranty: warrantySchema,
+    lifecycle: lifecycleSchema,
   },
   { timestamps: true },
 );
 
-AssetSchema.pre("save", async function () {
+schema.pre("save", async function () {
   if (!this.isNew) return;
 
   try {
     const [company, category, subCategory] = await Promise.all([
       mongoose.model("Company").findById(this.company, "acronym"),
-      mongoose.model("Picklist").findById(this.category, "acronym"),
-      mongoose.model("Picklist").findById(this.subCategory, "acronym"),
+      mongoose.model(MODELS.PICKLIST).findById(this.category, "acronym"),
+      mongoose.model(MODELS.PICKLIST).findById(this.subCategory, "acronym"),
     ]);
 
     const baseTag = `${company.acronym}-${category.acronym}-${subCategory.acronym}`.toUpperCase();
@@ -98,4 +191,4 @@ AssetSchema.pre("save", async function () {
   }
 });
 
-module.exports = mongoose.model("Asset", AssetSchema);
+module.exports = mongoose.model(MODELS.ASSET, schema);

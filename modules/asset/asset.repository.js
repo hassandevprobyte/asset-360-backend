@@ -8,6 +8,10 @@ const POPULATION_PIPELINE = [
   { path: "subCategory" },
   { path: "status" },
   { path: "createdBy" },
+  { path: "condition" },
+  { path: "condition" },
+  { path: "warranty", populate: "provider" },
+  { path: "lificycle", populate: "disposalReason" },
 ];
 
 exports.getAllAssets = async (filters) => {

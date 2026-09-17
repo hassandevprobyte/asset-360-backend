@@ -22,6 +22,10 @@ exports.error = {
     acronymExists: "Brand acronym already exists",
     assignedOnUser: "Brand is assigned on user",
   },
+  depreciation: {
+    notFound: "Depreciation not found",
+    titleExists: "Depreciation already exists",
+  },
   company: {
     notFound: "Company not found",
     titleExists: "Company title already exists",
