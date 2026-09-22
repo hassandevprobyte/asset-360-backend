@@ -7,6 +7,7 @@ const assetRepository = require("./asset.repository");
 const joi = require("../../config");
 const joiSchema = require("./asset.schema");
 const assetValidation = require("./asset.validation");
+const picklistValidation = require("../picklist/picklist.validation");
 
 // Utilities
 const excel = require("../../utils/excel");
@@ -50,7 +51,6 @@ exports.getAssetById = async (assetId) => {
 exports.createAsset = async (payload) => {
   const validatedPayload = joi.validate(payload, joiSchema.createAsset);
 
-  await companyValidation.throwErrorIfCompanyDoesNotExist(validatedPayload.company);
   await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.category);
   const subCategory = await picklistValidation.throwErrorIfPicklistDoesNotExistInParentPicklist(validatedPayload.subCategory, validatedPayload.category);
 
@@ -103,40 +103,40 @@ exports.updateAsset = async (payload) => {
 
   const updatePayload = {};
 
-  const updatedCategory = validatedPayload.category || existingAsset.category._id.toString();
-  const updatedSubCategory = validatedPayload.subCategory || existingAsset.subCategory._id.toString();
+  const updatedCategory = validatedPayload.category || String(existingAsset.category._id);
+  const updatedSubCategory = validatedPayload.subCategory || String(existingAsset.subCategory._id);
 
-  if (validatedPayload.category && validatedPayload.category !== existingAsset.category._id.toString()) {
+  if (validatedPayload.category && validatedPayload.category !== String(existingAsset.category._id)) {
     await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.category);
 
     updatePayload.category = validatedPayload.category;
   }
 
-  if (validatedPayload.subCategory && validatedPayload.subCategory !== existingAsset.subCategory._id.toString()) {
+  if (validatedPayload.subCategory && validatedPayload.subCategory !== String(existingAsset.subCategory._id)) {
     await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.subCategory);
 
     updatePayload.subCategory = validatedPayload.subCategory;
   }
 
-  if (validatedPayload.company && validatedPayload.company !== existingAsset.company._id.toString()) {
+  if (validatedPayload.company && validatedPayload.company !== String(existingAsset.company._id)) {
     await companyValidation.throwErrorIfCompanyDoesNotExist(validatedPayload.company);
 
     updatePayload.company = validatedPayload.company;
   }
 
-  if (validatedPayload.location && validatedPayload.location !== existingAsset?.location?._id?.toString()) {
+  if (validatedPayload.location && validatedPayload.location !== String(existingAsset?.location._id)) {
     await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.location);
 
     updatePayload.location = validatedPayload.location;
   }
 
-  if (validatedPayload.employee && validatedPayload.employee !== existingAsset?.employee?._id?.toString()) {
+  if (validatedPayload.employee && validatedPayload.employee !== String(existingAsset?.employee._id)) {
     await employeeValidation.throwErrorIfEmployeeDoesNotExist(validatedPayload.employee);
 
     updatePayload.employee = validatedPayload.employee;
   }
 
-  if (validatedPayload.status && validatedPayload.status !== existingAsset?.status?._id?.toString()) {
+  if (validatedPayload.status && validatedPayload.status !== String(existingAsset?.status._id)) {
     await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.status);
 
     updatePayload.status = validatedPayload.status;
@@ -158,7 +158,7 @@ exports.updateAsset = async (payload) => {
     updatePayload.serialNumber = validatedPayload.serialNumber;
   }
 
-  if (validatedPayload.condition && validatedPayload.condition !== existingCondition) {
+  if (validatedPayload.condition && validatedPayload.condition !== String(existingAsset.condition)) {
     await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.condition);
 
     updatePayload.condition = validatedPayload.condition;
@@ -168,7 +168,7 @@ exports.updateAsset = async (payload) => {
     updatePayload.expiryDate = validatedPayload.expiryDate;
   }
 
-  if (validatedPayload.hasOwnProperty("hasExpiry") && validatedPayload.hasExpiry !== existingAsset.hasExpiry) {
+  if (validatedPayload.hasOwnProperty("hasExpiry") && validatedPayload.hasExpiry !== existingAsset?.hasExpiry) {
     updatePayload.hasExpiry = validatedPayload.hasExpiry;
 
     if (updatePayload.hasExpiry === false && existingAsset.expiryDate) {
@@ -190,9 +190,9 @@ exports.updateAsset = async (payload) => {
     }
   }
 
-  if (validatedPayload.warranty && !lodash.isEqual(validatedPayload.warranty, existingAsset.warranty)) {
+  if (validatedPayload.warranty && !lodash.isEqual(validatedPayload.warranty, existingAsset?.warranty)) {
     if (validatedPayload.warranty?.provider) {
-      await picklistValidation.throwErrorIfPicklistDoesNotExist(warranty.provider);
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.warranty.provider);
     }
 
     if (validatedPayload.warranty?.isWarrantied === false) {
@@ -202,14 +202,6 @@ exports.updateAsset = async (payload) => {
     } else {
       updatePayload.warranty = validatedPayload.warranty;
     }
-  }
-
-  if (validatedPayload.lifecycle && !lodash.isEqual(validatedPayload.lifecycle, existingAsset.lifecycle)) {
-    if (validatedPayload.lifecycle?.disposalReason) {
-      await picklistValidation.throwErrorIfPicklistDoesNotExist(lifecycle.disposalReason);
-    }
-
-    updatePayload.lifecycle = validatedPayload.lifecycle;
   }
 
   return assetRepository.updateAssetById(validatedPayload.id, updatePayload);

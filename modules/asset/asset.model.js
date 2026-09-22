@@ -32,54 +32,6 @@ const warrantySchema = {
   },
 };
 
-const lifecycleSchema = {
-  acquiredAt: {
-    type: Date,
-    required: [true, "Acquired date is required"],
-  },
-  activatedAt: {
-    type: Date,
-    validate: {
-      validator: function (v) {
-        return !v || v >= this.acquiredAt;
-      },
-      message: "Activated date must be after acquired date",
-    },
-  },
-  retiredAt: {
-    type: Date,
-    validate: {
-      validator: function (v) {
-        return !v || v >= this.activatedAt;
-      },
-      message: "Retired date must be after activated date",
-    },
-  },
-  disposedAt: {
-    type: Date,
-    validate: {
-      validator: function (v) {
-        return !v || v >= this.retiredAt;
-      },
-      message: "Disposed date must be after retired date",
-    },
-  },
-  disposalReason: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: MODELS.PICKLIST,
-    required: [
-      function () {
-        return !!this.disposedAt;
-      },
-      "Disposal reason is required",
-    ],
-  },
-  disposalAmount: {
-    type: Number,
-    min: 0,
-  },
-};
-
 const schema = new mongoose.Schema(
   {
     tag: {
@@ -90,8 +42,6 @@ const schema = new mongoose.Schema(
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: MODELS.COMPANY,
-      required: [true, "company is required"],
     },
     location: {
       type: mongoose.Schema.Types.ObjectId,
@@ -99,7 +49,6 @@ const schema = new mongoose.Schema(
     },
     employee: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Employee",
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
@@ -136,8 +85,6 @@ const schema = new mongoose.Schema(
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: MODELS.USER,
-      required: [true, "created by is required"],
     },
 
     // TODO: New Fields
@@ -151,7 +98,6 @@ const schema = new mongoose.Schema(
       ref: MODELS.PICKLIST,
     },
     warranty: warrantySchema,
-    lifecycle: lifecycleSchema,
   },
   { timestamps: true },
 );
@@ -160,16 +106,15 @@ schema.pre("save", async function () {
   if (!this.isNew) return;
 
   try {
-    const [company, category, subCategory] = await Promise.all([
-      mongoose.model("Company").findById(this.company, "acronym"),
+    const [category, subCategory] = await Promise.all([
       mongoose.model(MODELS.PICKLIST).findById(this.category, "acronym"),
       mongoose.model(MODELS.PICKLIST).findById(this.subCategory, "acronym"),
     ]);
 
-    const baseTag = `${company.acronym}-${category.acronym}-${subCategory.acronym}`.toUpperCase();
+    const baseTag = `${category.acronym}-${subCategory.acronym}`.toUpperCase();
 
     const lastAsset = await mongoose
-      .model("Asset")
+      .model(MODELS.ASSET)
       .findOne({ tag: { $regex: new RegExp(`^${baseTag}-\\d+$`) } })
       .sort({ tag: -1 });
 

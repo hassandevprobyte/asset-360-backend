@@ -56,7 +56,17 @@ exports.getDepreciationById = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/depreciations
 // @access  Private
 exports.createDepreciation = asyncHandler(async (req, res) => {
-  const payload = {};
+  const payload = {
+    asset: req.body.asset,
+    method: req.body.method,
+    salvageValue: req.body.salvageValue,
+    usefulLifeMonths: req.body.usefulLifeMonths,
+    depreciationRate: req.body.depreciationRate,
+    acquisitionCost: req.body.acquisitionCost,
+    totalAcquiredUnits: req.body.totalAcquiredUnits,
+    totalExpectedUnits: req.body.totalExpectedUnits,
+    startDate: req.body.startDate,
+  };
 
   const data = await depreciationService.createDepreciation(payload);
 
@@ -69,6 +79,15 @@ exports.createDepreciation = asyncHandler(async (req, res) => {
 exports.updateDepreciation = asyncHandler(async (req, res) => {
   const payload = {
     id: req.params.id,
+    asset: req.body.asset,
+    method: req.body.method,
+    salvageValue: req.body.salvageValue,
+    usefulLifeMonths: req.body.usefulLifeMonths,
+    depreciationRate: req.body.depreciationRate,
+    acquisitionCost: req.body.acquisitionCost,
+    totalAcquiredUnits: req.body.totalAcquiredUnits,
+    totalExpectedUnits: req.body.totalExpectedUnits,
+    startDate: req.body.startDate,
   };
 
   const data = await depreciationService.updateDepreciation(payload);

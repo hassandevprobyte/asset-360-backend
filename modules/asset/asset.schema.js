@@ -16,19 +16,6 @@ const warrantySchema = Joi.object({
   provider: objectId,
 });
 
-const lifecycleSchema = Joi.object({
-  acquiredAt: Joi.date().required(),
-  activatedAt: Joi.date().greater(Joi.ref("acquiredAt")),
-  retiredAt: Joi.date().greater(Joi.ref("activatedAt")),
-  disposedAt: Joi.date().greater(Joi.ref("retiredAt")),
-  disposalReason: Joi.when("disposedAt", {
-    is: Joi.exist(),
-    then: objectId.required(),
-    otherwise: objectId.optional(),
-  }),
-  disposalAmount: Joi.number().min(0),
-});
-
 exports.getAssetById = objectId.required();
 
 exports.getAssetsSummaryByGroup = Joi.object({
@@ -38,7 +25,6 @@ exports.getAssetsSummaryByGroup = Joi.object({
 });
 
 exports.baseSchema = Joi.object({
-  company: objectId,
   location: objectId,
   employee: objectId,
   category: objectId,
@@ -52,12 +38,8 @@ exports.baseSchema = Joi.object({
   serialNumber: Joi.string().trim().empty(""),
   condition: objectId,
   warranty: warrantySchema,
-  lifecycle: lifecycleSchema,
-  createdBy: objectId,
 });
 
-exports.createAsset = exports.baseSchema
-  .fork(["company", "category", "subCategory", "purchaseDate", "createdBy"], (schema) => schema.required())
-  .fork("hasExpiry", (schema) => schema.default(false));
+exports.createAsset = exports.baseSchema.fork(["category", "subCategory", "purchaseDate"], (schema) => schema.required()).fork("hasExpiry", (schema) => schema.default(false));
 
-exports.updateAsset = exports.baseSchema.append({ id: objectId.required() }).fork("createdBy", (schema) => schema.strip());
+exports.updateAsset = exports.baseSchema.append({ id: objectId.required() });

@@ -57,7 +57,7 @@ exports.getAssetById = asyncHandler(async (req, res) => {
 // @access  Private
 exports.createAsset = asyncHandler(async (req, res) => {
   const payload = {
-    company: req.body.company,
+    // company: req.body.company,
     location: req.body.location,
     employee: req.body.employee,
     category: req.body.category,
@@ -71,8 +71,7 @@ exports.createAsset = asyncHandler(async (req, res) => {
     serialNumber: req.body.serialNumber,
     condition: req.body.condition,
     warranty: req.body.warranty,
-    lifecycle: req.body.lifecycle,
-    createdBy: req.user._id,
+    // createdBy: req.user._id,
   };
 
   const data = await assetService.createAsset(payload);
@@ -86,7 +85,7 @@ exports.createAsset = asyncHandler(async (req, res) => {
 exports.updateAsset = asyncHandler(async (req, res) => {
   const payload = {
     id: req.params.id,
-    company: req.body.company,
+    // company: req.body.company,
     location: req.body.location,
     employee: req.body.employee,
     category: req.body.category,
@@ -100,7 +99,6 @@ exports.updateAsset = asyncHandler(async (req, res) => {
     serialNumber: req.body.serialNumber,
     condition: req.body.condition,
     warranty: req.body.warranty,
-    lifecycle: req.body.lifecycle,
   };
 
   const data = await assetService.updateAsset(payload);

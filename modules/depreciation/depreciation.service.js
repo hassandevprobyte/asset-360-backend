@@ -39,15 +39,11 @@ exports.getDepreciationById = async (depreciationId) => {
 
 exports.createDepreciation = async (payload) => {
   const validatedPayload = joi.validate(payload, joiSchema.createDepreciation);
-
-  // Validate asset
+  
   await assetValidation.throwErrorIfAssetDoesNotExist(validatedPayload.asset);
-
-  // Validate depreciation method
   depreciationHelpers.validateDepreciationMethod(validatedPayload);
 
-  // Prevent multiple depreciation configurations
-  await depreciationValidation.throwErrorIfDepreciationAlreadyExists(validatedPayload.asset);
+  await depreciationValidation.throwErrorIfDepreciationAssetExists(validatedPayload.asset);
 
   return depreciationRepository.createDepreciation(validatedPayload);
 };
@@ -97,7 +93,7 @@ exports.updateDepreciation = async (payload) => {
     updatePayload.startDate = validatedPayload.startDate;
   }
 
-  depreciationHelpers.validateDepreciationMethod({ ...existingDepreciation.toObject(), ...updatePayload });
+  depreciationHelpers.validateDepreciationMethod({ ...existingDepreciation, ...updatePayload });
 
   if (!Object.keys(updatePayload).length) return existingDepreciation;
 

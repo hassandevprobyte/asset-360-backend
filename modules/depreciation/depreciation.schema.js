@@ -20,4 +20,4 @@ exports.baseSchema = Joi.object({
 
 exports.createDepreciation = exports.baseSchema.fork(["asset", "method", "acquisitionCost", "startDate"], (schema) => schema.required());
 
-exports.updateDepreciation = exports.baseSchema.append({ id: objectId.required() }).min(1);
+exports.updateDepreciation = exports.baseSchema.append({ id: objectId.required() });

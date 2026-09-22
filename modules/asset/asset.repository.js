@@ -1,17 +1,14 @@
 const Asset = require("./asset.model");
 
 const POPULATION_PIPELINE = [
-  { path: "company" },
   { path: "location" },
   { path: "employee" },
   { path: "category" },
   { path: "subCategory" },
   { path: "status" },
-  { path: "createdBy" },
   { path: "condition" },
   { path: "condition" },
   { path: "warranty", populate: "provider" },
-  { path: "lificycle", populate: "disposalReason" },
 ];
 
 exports.getAllAssets = async (filters) => {

@@ -2,7 +2,7 @@ const Boom = require("@hapi/boom");
 
 // Repositories
 const roleRepository = require("./role.repository");
-const userRepository = require("../user/user.repository");
+// const userRepository = require("../user/user.repository");
 
 // Constants
 const message = require("../../constants/MESSAGE");
@@ -36,9 +36,9 @@ exports.throwErrorIfRoleTitleExists = async (title) => {
 };
 
 exports.throwErrorIfRoleIsAssignedOnUser = async (roleId) => {
-  const roleIsAssigned = await userRepository.getUserByRoleId(roleId);
+//   const roleIsAssigned = await userRepository.getUserByRoleId(roleId);
 
-  if (roleIsAssigned) {
-    throw Boom.conflict(message.error.role.assignedOnUser);
-  }
+//   if (roleIsAssigned) {
+//     throw Boom.conflict(message.error.role.assignedOnUser);
+//   }
 };

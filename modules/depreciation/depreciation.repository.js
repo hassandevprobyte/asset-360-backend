@@ -19,7 +19,7 @@ exports.getDepreciationById = async (depreciationId) => {
 };
 
 exports.getDepreciationByAssetId = async (assetId) => {
-  return Depreciation.findById({ asset: assetId }).populate(POPULATION_PIPELINE).lean();
+  return Depreciation.findOne({ asset: assetId }).populate(POPULATION_PIPELINE).lean();
 };
 
 exports.createDepreciation = async (payload) => {
