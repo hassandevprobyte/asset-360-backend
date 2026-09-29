@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const MODELS = require("../../constants/MODELS");
 
 const warrantySchema = {
-  isWarrantied: {
+  hasWarranty: {
     type: Boolean,
     default: false,
   },
@@ -12,7 +12,7 @@ const warrantySchema = {
     type: Date,
     required: [
       function () {
-        return this.isWarrantied;
+        return this.hasWarranty;
       },
       "Start date is required",
     ],
@@ -21,7 +21,7 @@ const warrantySchema = {
     type: Date,
     required: [
       function () {
-        return this.isWarrantied;
+        return this.hasWarranty;
       },
       "End date is required",
     ],
@@ -77,6 +77,12 @@ const schema = new mongoose.Schema(
     },
     expiryDate: {
       type: Date,
+      required: [
+        function () {
+          return this.hasExpiry;
+        },
+        "Expiry date is required",
+      ],
     },
     description: {
       type: String,

@@ -74,6 +74,8 @@ exports.createAsset = asyncHandler(async (req, res) => {
     // createdBy: req.user._id,
   };
 
+  console.log(payload);
+
   const data = await assetService.createAsset(payload);
 
   res.status(201).json(data);

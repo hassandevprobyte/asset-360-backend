@@ -15,6 +15,7 @@ const formatAmount = require("../../utils/formatAmount");
 const formatDate = require("../../utils/formatDate");
 const isSameDay = require("../../utils/isSameDay");
 const isValidObjectId = require("../../utils/isValidObjectId");
+const getGroupListItemsMap = require("../../utils/getGroupListItemsMap");
 
 // Constants
 const MODELS = require("../../constants/MODELS");
@@ -78,7 +79,7 @@ exports.createAsset = async (payload) => {
     }
 
     // If warranty is disabled, don't store unnecessary warranty data
-    if (!validatedPayload.warranty.isWarrantied) {
+    if (!validatedPayload.warranty.hasWarranty) {
       delete validatedPayload.warranty;
     }
   }
@@ -195,9 +196,9 @@ exports.updateAsset = async (payload) => {
       await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.warranty.provider);
     }
 
-    if (validatedPayload.warranty?.isWarrantied === false) {
+    if (validatedPayload.warranty?.hasWarranty === false) {
       updatePayload.warranty = {
-        isWarrantied: false,
+        hasWarranty: false,
       };
     } else {
       updatePayload.warranty = validatedPayload.warranty;
@@ -267,8 +268,8 @@ async function transformAssetsSummaryByGroup(assetsSummary, primaryGroup, second
   const secondaryFilters = { _id: { $in: secondaryGroupIds } };
 
   const [primaryGroupItemsMap, secondaryGroupItemsMap] = await Promise.all([
-    groupHelpers.getGroupListItemsMap(primaryGroup, primaryFilters),
-    groupHelpers.getGroupListItemsMap(secondaryGroup, secondaryFilters),
+    getGroupListItemsMap(primaryGroup, primaryFilters),
+    getGroupListItemsMap(secondaryGroup, secondaryFilters),
   ]);
 
   const transformSecondaryGroupWise = (secondaryGroupWise = []) => {
