@@ -10,6 +10,7 @@ const queryFilters = require("../middleware/queryFilters");
 const MODELS = require("../constants/MODELS");
 
 const routes = [
+  { path: "/access", resource: MODELS.ACCESS, route: require("./access/access.route") },
   { path: "/assets", resource: MODELS.ASSET, route: require("./asset/asset.route") },
   { path: "/attachments", resource: MODELS.ATTACHMENT, route: require("./attachment/attachment.route") },
   { path: "/depreciations", resource: MODELS.DEPRECIATION, route: require("./depreciation/depreciation.route") },
@@ -18,7 +19,7 @@ const routes = [
 ];
 
 routes.forEach((route) => {
-  const middlewares = [];
+  const middlewares = [protect];
 
   if (route.resource) {
     // middlewares.push(checkPermissions(route.resource));

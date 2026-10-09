@@ -56,27 +56,29 @@ exports.getAssetById = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/assets
 // @access  Private
 exports.createAsset = asyncHandler(async (req, res) => {
-  const payload = {
-    // company: req.body.company,
+  const assetPayload = {
+    serialNumber: req.body.serialNumber,
+    company: req.body.company,
     location: req.body.location,
     employee: req.body.employee,
     category: req.body.category,
     subCategory: req.body.subCategory,
     status: req.body.status,
+    condition: req.body.condition,
     purchaseAmount: req.body.purchaseAmount,
     purchaseDate: req.body.purchaseDate,
-    hasExpiry: req.body.hasExpiry,
-    expiryDate: req.body.expiryDate,
-    description: req.body.description,
-    serialNumber: req.body.serialNumber,
-    condition: req.body.condition,
+    notes: req.body.notes,
+    expiry: req.body.expiry,
     warranty: req.body.warranty,
     // createdBy: req.user._id,
   };
 
-  console.log(payload);
+  const attachmentPayload = {
+    images: req.files?.images,
+    // uploadedBy: req.user._id,
+  };
 
-  const data = await assetService.createAsset(payload);
+  const data = await assetService.createAsset(assetPayload, attachmentPayload);
 
   res.status(201).json(data);
 });
@@ -87,23 +89,27 @@ exports.createAsset = asyncHandler(async (req, res) => {
 exports.updateAsset = asyncHandler(async (req, res) => {
   const payload = {
     id: req.params.id,
-    // company: req.body.company,
+    serialNumber: req.body.serialNumber,
+    company: req.body.company,
     location: req.body.location,
     employee: req.body.employee,
     category: req.body.category,
     subCategory: req.body.subCategory,
     status: req.body.status,
+    condition: req.body.condition,
     purchaseAmount: req.body.purchaseAmount,
     purchaseDate: req.body.purchaseDate,
-    hasExpiry: req.body.hasExpiry,
-    expiryDate: req.body.expiryDate,
-    description: req.body.description,
-    serialNumber: req.body.serialNumber,
-    condition: req.body.condition,
+    notes: req.body.notes,
+    expiry: req.body.expiry,
     warranty: req.body.warranty,
   };
 
-  const data = await assetService.updateAsset(payload);
+  const attachmentPayload = {
+    images: req.files?.images,
+    // uploadedBy: req.user._id,
+  };
+
+  const data = await assetService.updateAsset(payload, attachmentPayload);
 
   res.status(200).json(data);
 });

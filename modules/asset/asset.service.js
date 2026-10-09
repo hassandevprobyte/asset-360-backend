@@ -1,5 +1,8 @@
 const lodash = require("lodash");
 
+// Services
+const attachmentService = require("../attachment/attachment.service");
+
 // Repositories
 const assetRepository = require("./asset.repository");
 
@@ -9,13 +12,16 @@ const joiSchema = require("./asset.schema");
 const assetValidation = require("./asset.validation");
 const picklistValidation = require("../picklist/picklist.validation");
 
+// Helpers
+const assetHelpers = require("./asset.helper");
+
 // Utilities
 const excel = require("../../utils/excel");
 const formatAmount = require("../../utils/formatAmount");
 const formatDate = require("../../utils/formatDate");
 const isSameDay = require("../../utils/isSameDay");
-const isValidObjectId = require("../../utils/isValidObjectId");
-const getGroupListItemsMap = require("../../utils/getGroupListItemsMap");
+const isValidDateRange = require("../../utils/isValidDateRange");
+const removeUploadedFiles = require("../../utils/removeUploadedFiles");
 
 // Constants
 const MODELS = require("../../constants/MODELS");
@@ -40,7 +46,7 @@ exports.getAssetsSummaryByGroup = async (payload) => {
 
   const assetsSummary = await assetRepository.getAssetsSummaryByGroup(filters, primaryGroup, secondaryGroup);
 
-  return transformAssetsSummaryByGroup(assetsSummary, primaryGroup, secondaryGroup);
+  return assetHelpers.transformAssetsSummaryByGroup(assetsSummary, primaryGroup, secondaryGroup);
 };
 
 exports.getAssetById = async (assetId) => {
@@ -49,170 +55,189 @@ exports.getAssetById = async (assetId) => {
   return assetValidation.throwErrorIfAssetDoesNotExist(assetId);
 };
 
-exports.createAsset = async (payload) => {
-  const validatedPayload = joi.validate(payload, joiSchema.createAsset);
+exports.createAsset = async (payload, attachmentPayload) => {
+  try {
+    const validatedPayload = joi.validate(payload, joiSchema.createAsset);
 
-  await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.category);
-  const subCategory = await picklistValidation.throwErrorIfPicklistDoesNotExistInParentPicklist(validatedPayload.subCategory, validatedPayload.category);
+    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.category);
+    const subCategory = await picklistValidation.throwErrorIfPicklistDoesNotExistInParentPicklist(validatedPayload.subCategory, validatedPayload.category);
 
-  if (subCategory.meta?.requiresEmployee) {
-    await employeeValidation.throwErrorIfEmployeeDoesNotExist(validatedPayload.employee);
-  } else if (validatedPayload.employee) {
-    delete validatedPayload.employee;
-  }
+    if (subCategory.meta?.requiresEmployee) {
+      await employeeValidation.throwErrorIfEmployeeDoesNotExist(validatedPayload.employee);
+    } else if (validatedPayload.employee) {
+      delete validatedPayload.employee;
+    }
 
-  if (validatedPayload.status) {
-    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.status);
-  } else {
-    const defaultStatus = await picklistValidation.throwErrorIfDefaultPicklistDoesNotExistInContext(MODELS.ASSET, "status");
+    if (validatedPayload.condition) {
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.condition);
+    } else {
+      const defaultStatus = await picklistValidation.throwErrorIfDefaultPicklistDoesNotExistInContext(MODELS.ASSET, "condition");
 
-    validatedPayload.status = defaultStatus._id;
-  }
+      validatedPayload.condition = defaultStatus._id;
+    }
 
-  if (validatedPayload.location) {
-    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.location);
-  }
+    if (validatedPayload.location) {
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.location);
+    }
 
-  if (validatedPayload.warranty) {
+    if (!validatedPayload.warranty.hasWarranty) {
+      delete validatedPayload.warranty;
+    }
+
     if (validatedPayload.warranty.provider) {
       await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.warranty.provider);
     }
 
-    // If warranty is disabled, don't store unnecessary warranty data
-    if (!validatedPayload.warranty.hasWarranty) {
-      delete validatedPayload.warranty;
+    if (!validatedPayload.expiry.hasExpiry) {
+      delete validatedPayload.expiryDate;
     }
-  }
 
-  // Lifecycle
-  if (validatedPayload.lifecycle?.disposalReason) {
-    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.lifecycle.disposalReason);
-  }
+    const asset = await assetRepository.createAsset(validatedPayload);
 
-  // Expiry
-  if (!validatedPayload.hasExpiry) {
-    delete validatedPayload.expiryDate;
-  }
+    const updatePayload = {};
+    if (attachmentPayload?.images?.length) {
+      await attachmentService.addAttachments({
+        resource: MODELS.ASSET,
+        resourceId: asset._id,
+        files: attachmentPayload.images,
+        uploadedBy: attachmentPayload.uploadedBy,
+      });
 
-  return assetRepository.createAsset(validatedPayload);
+      updatePayload.$set = { images: attachmentPayload.images.map((image) => image.path) };
+    }
+
+    if (!Object.keys(updatePayload).length) return asset;
+
+    return assetRepository.updateAssetById(asset._id, updatePayload);
+  } catch (error) {
+    await removeUploadedFiles({ files: attachmentPayload });
+    throw error;
+  }
 };
 
-exports.updateAsset = async (payload) => {
-  const validatedPayload = joi.validate(payload, joiSchema.updateAsset);
+exports.updateAsset = async (payload, attachmentPayload) => {
+  try {
+    const validatedPayload = joi.validate(payload, joiSchema.updateAsset);
 
-  const existingAsset = await assetValidation.throwErrorIfAssetDoesNotExist(validatedPayload.id);
+    const existingAsset = await assetValidation.throwErrorIfAssetDoesNotExist(validatedPayload.id);
+    const updatePayload = {};
 
-  const updatePayload = {};
+    const updatedCategory = validatedPayload.category || String(existingAsset?.category?._id);
+    const updatedSubCategory = validatedPayload.subCategory || String(existingAsset?.subCategory?._id);
 
-  const updatedCategory = validatedPayload.category || String(existingAsset.category._id);
-  const updatedSubCategory = validatedPayload.subCategory || String(existingAsset.subCategory._id);
-
-  if (validatedPayload.category && validatedPayload.category !== String(existingAsset.category._id)) {
-    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.category);
-
-    updatePayload.category = validatedPayload.category;
-  }
-
-  if (validatedPayload.subCategory && validatedPayload.subCategory !== String(existingAsset.subCategory._id)) {
-    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.subCategory);
-
-    updatePayload.subCategory = validatedPayload.subCategory;
-  }
-
-  if (validatedPayload.company && validatedPayload.company !== String(existingAsset.company._id)) {
-    await companyValidation.throwErrorIfCompanyDoesNotExist(validatedPayload.company);
-
-    updatePayload.company = validatedPayload.company;
-  }
-
-  if (validatedPayload.location && validatedPayload.location !== String(existingAsset?.location._id)) {
-    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.location);
-
-    updatePayload.location = validatedPayload.location;
-  }
-
-  if (validatedPayload.employee && validatedPayload.employee !== String(existingAsset?.employee._id)) {
-    await employeeValidation.throwErrorIfEmployeeDoesNotExist(validatedPayload.employee);
-
-    updatePayload.employee = validatedPayload.employee;
-  }
-
-  if (validatedPayload.status && validatedPayload.status !== String(existingAsset?.status._id)) {
-    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.status);
-
-    updatePayload.status = validatedPayload.status;
-  }
-
-  if (validatedPayload.hasOwnProperty("purchaseAmount") && validatedPayload.purchaseAmount !== existingAsset.purchaseAmount) {
-    updatePayload.purchaseAmount = validatedPayload.purchaseAmount;
-  }
-
-  if (validatedPayload.purchaseDate && !isSameDay(validatedPayload.purchaseDate, existingAsset.purchaseDate)) {
-    updatePayload.purchaseDate = validatedPayload.purchaseDate;
-  }
-
-  if (validatedPayload.description && validatedPayload.description !== existingAsset.description) {
-    updatePayload.description = validatedPayload.description;
-  }
-
-  if (validatedPayload.serialNumber && validatedPayload.serialNumber !== existingAsset.serialNumber) {
-    updatePayload.serialNumber = validatedPayload.serialNumber;
-  }
-
-  if (validatedPayload.condition && validatedPayload.condition !== String(existingAsset.condition)) {
-    await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.condition);
-
-    updatePayload.condition = validatedPayload.condition;
-  }
-
-  if (validatedPayload.expiryDate && !isSameDay(validatedPayload.expiryDate, existingAsset.expiryDate)) {
-    updatePayload.expiryDate = validatedPayload.expiryDate;
-  }
-
-  if (validatedPayload.hasOwnProperty("hasExpiry") && validatedPayload.hasExpiry !== existingAsset?.hasExpiry) {
-    updatePayload.hasExpiry = validatedPayload.hasExpiry;
-
-    if (updatePayload.hasExpiry === false && existingAsset.expiryDate) {
-      updatePayload.$unset = { expiryDate: "" };
-    }
-  }
-
-  if (updatePayload.category || updatePayload.subCategory) {
-    const subCategory = await picklistValidation.throwErrorIfPicklistDoesNotExistInParentPicklist(updatedSubCategory, updatedCategory);
-
-    const requiresEmployee = subCategory.meta?.requiresEmployee;
-
-    if (requiresEmployee && updatePayload.employee) {
-      await employeeValidation.throwErrorIfEmployeeDoesNotExist(validatedPayload.employee);
+    if (validatedPayload.serialNumber && validatedPayload.serialNumber !== existingAsset?.serialNumber) {
+      updatePayload.serialNumber = validatedPayload.serialNumber;
     }
 
-    if (!requiresEmployee && existingAsset.employee) {
-      updatePayload.$unset = { ...updatePayload.$unset, employee: "" };
+    if (validatedPayload.company && validatedPayload.company !== String(existingAsset?.company)) {
+      updatePayload.company = validatedPayload.company;
     }
+
+    if (validatedPayload.location && validatedPayload.location !== String(existingAsset?.location?._id)) {
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.location);
+      updatePayload.location = validatedPayload.location;
+    }
+
+    if (validatedPayload.employee && validatedPayload.employee !== String(existingAsset?.employee)) {
+      updatePayload.employee = validatedPayload.employee;
+    }
+
+    if (validatedPayload.category && validatedPayload.category !== String(existingAsset?.category?._id)) {
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.category);
+      updatePayload.category = validatedPayload.category;
+    }
+
+    if (validatedPayload.subCategory && validatedPayload.subCategory !== String(existingAsset?.subCategory?._id)) {
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.subCategory);
+      updatePayload.subCategory = validatedPayload.subCategory;
+    }
+
+    if (updatePayload.category || updatePayload.subCategory) {
+      const subCategory = await picklistValidation.throwErrorIfPicklistDoesNotExistInParentPicklist(updatedSubCategory, updatedCategory);
+
+      const requiresEmployee = subCategory.meta?.requiresEmployee;
+
+      if (requiresEmployee && updatePayload.employee) {
+        await employeeValidation.throwErrorIfEmployeeDoesNotExist(validatedPayload.employee);
+      }
+
+      if (!requiresEmployee && existingAsset.employee) {
+        updatePayload.$unset = { ...(updatePayload.$unset || {}), employee: "" };
+      }
+    }
+
+    if (validatedPayload.status && validatedPayload.status !== String(existingAsset?.status)) {
+      updatePayload.status = validatedPayload.status;
+    }
+
+    if (validatedPayload.condition && validatedPayload.condition !== String(existingAsset?.condition?._id)) {
+      await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.condition);
+      updatePayload.condition = validatedPayload.condition;
+    }
+
+    if (validatedPayload.hasOwnProperty("purchaseAmount") && validatedPayload.purchaseAmount !== existingAsset?.purchaseAmount) {
+      updatePayload.purchaseAmount = validatedPayload.purchaseAmount;
+    }
+
+    if (validatedPayload.purchaseDate && !isSameDay(validatedPayload.purchaseDate, existingAsset?.purchaseDate)) {
+      updatePayload.purchaseDate = normalizeDate(validatedPayload.purchaseDate);
+    }
+
+    if (validatedPayload.notes && validatedPayload.notes !== existingAsset?.notes) {
+      updatePayload.notes = validatedPayload.notes;
+    }
+
+    if (validatedPayload.expiry && !lodash.isEqual(validatedPayload.expiry, existingAsset?.expiry)) {
+      if (validatedPayload.expiry?.hasExpiry === false) {
+        updatePayload.$unset = { ...(updatePayload.$unset || {}), expiry: "" };
+      } else {
+        updatePayload.expiry = validatedPayload.expiry;
+      }
+    }
+
+    if (validatedPayload.warranty && !lodash.isEqual(validatedPayload.warranty, existingAsset?.warranty)) {
+      if (validatedPayload.warranty?.hasWarranty === false) {
+        updatePayload.$unset = { ...(updatePayload.$unset || {}), warranty: "" };
+      } else {
+        if (validatedPayload.warranty?.provider && validatedPayload.warranty.provider !== String(existingAsset?.warranty?.provider?._id)) {
+          await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.warranty.provider);
+        }
+
+        const updatedStartDate = validatedPayload.warranty.startDate || existingAsset?.warranty?.startDate;
+        const updatedEndDate = validatedPayload.warranty.endDate || existingAsset?.warranty?.endDate;
+        isValidDateRange(updatedStartDate, updatedEndDate);
+
+        updatePayload.warranty = validatedPayload.warranty;
+      }
+    }
+
+    if (attachmentPayload?.images) {
+      await attachmentService.deleteAttachmentsByResource(MODELS.ASSET, existingAsset._id);
+
+      await attachmentService.addAttachments({
+        resource: MODELS.ASSET,
+        resourceId: existingAsset._id,
+        files: attachmentPayload.images,
+        uploadedBy: attachmentPayload.uploadedBy,
+      });
+
+      updatePayload.$set = { images: attachmentPayload.images.map((image) => image.path) };
+    }
+
+    if (!Object.keys(updatePayload).length) return existingAsset;
+
+    return assetRepository.updateAssetById(validatedPayload.id, updatePayload);
+  } catch (error) {
+    await removeUploadedFiles({ files: attachmentPayload });
+    throw error;
   }
-
-  if (validatedPayload.warranty && !lodash.isEqual(validatedPayload.warranty, existingAsset?.warranty)) {
-    if (validatedPayload.warranty?.provider) {
-      await picklistValidation.throwErrorIfPicklistDoesNotExist(validatedPayload.warranty.provider);
-    }
-
-    if (validatedPayload.warranty?.hasWarranty === false) {
-      updatePayload.warranty = {
-        hasWarranty: false,
-      };
-    } else {
-      updatePayload.warranty = validatedPayload.warranty;
-    }
-  }
-
-  return assetRepository.updateAssetById(validatedPayload.id, updatePayload);
 };
 
 exports.deleteAsset = async (assetId) => {
   joi.validate(assetId, joiSchema.getAssetById);
 
   await assetValidation.throwErrorIfAssetDoesNotExist(assetId);
-
+  await attachmentService.deleteAttachmentsByResource(MODELS.ASSET, assetId);
   await assetRepository.deleteAssetById(assetId);
 
   return { deletedId: assetId };
@@ -253,60 +278,3 @@ exports.exportAssets = async (filters, stream) => {
 
   await excel.export({ stream, sheetName: "Assets", columns, rows });
 };
-
-async function transformAssetsSummaryByGroup(assetsSummary, primaryGroup, secondaryGroup) {
-  const primaryGroupIds = assetsSummary.primaryGroupWise
-    .map((group) => group?._id)
-    .filter((id) => id && isValidObjectId(id))
-    .map(String);
-  const primaryFilters = { _id: { $in: primaryGroupIds } };
-
-  const secondaryGroupIds = assetsSummary.secondaryGroupWise
-    .map((group) => group?._id)
-    .filter((id) => id && isValidObjectId(id))
-    .map(String);
-  const secondaryFilters = { _id: { $in: secondaryGroupIds } };
-
-  const [primaryGroupItemsMap, secondaryGroupItemsMap] = await Promise.all([
-    getGroupListItemsMap(primaryGroup, primaryFilters),
-    getGroupListItemsMap(secondaryGroup, secondaryFilters),
-  ]);
-
-  const transformSecondaryGroupWise = (secondaryGroupWise = []) => {
-    const secondaryGroupWiseMap = new Map(secondaryGroupWise.map((s) => [String(s._id), s]));
-
-    return Array.from(secondaryGroupItemsMap.values())
-      .map((s) => {
-        const secondaryGroupData = secondaryGroupWiseMap.get(String(s._id)) || {};
-
-        const _id = s._id || null;
-        const title = s.title || "-";
-        const color = s.color || null;
-        const count = secondaryGroupData.count || 0;
-        const purchaseAmount = secondaryGroupData.purchaseAmount || 0;
-
-        return { _id, title, color, count, purchaseAmount };
-      })
-      .sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
-  };
-
-  const transformPrimaryGroupWise = (primaryGroupWise = []) => {
-    return primaryGroupWise
-      .map((primaryGroup) => {
-        const primaryGroupFound = primaryGroupItemsMap.get(String(primaryGroup._id));
-
-        return {
-          ...primaryGroup,
-          title: primaryGroupFound?.title || "-",
-          color: primaryGroupFound?.color || null,
-          secondaryGroupWise: transformSecondaryGroupWise(primaryGroup?.secondaryGroupWise),
-        };
-      })
-      .sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
-  };
-
-  const primaryGroupWise = transformPrimaryGroupWise(assetsSummary.primaryGroupWise);
-  const secondaryGroupWise = transformSecondaryGroupWise(assetsSummary.secondaryGroupWise);
-
-  return { ...assetsSummary, primaryGroupWise, secondaryGroupWise };
-}

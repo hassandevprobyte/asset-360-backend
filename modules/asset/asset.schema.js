@@ -1,38 +1,48 @@
 const Joi = require("joi");
-const { objectId } = require("../../config");
+const { objectId, dateOnly } = require("../../config");
+
+// Constants
+const ENUMS = require("../../constants/ENUMS");
 
 exports.getAssetById = objectId.required();
 
 exports.baseSchema = Joi.object({
+  serialNumber: Joi.string().trim(),
+  company: objectId,
   location: objectId,
   employee: objectId,
   category: objectId,
   subCategory: objectId,
-  status: objectId,
-  purchaseAmount: Joi.number().min(0),
-  purchaseDate: Joi.date().max("now"),
-  hasExpiry: Joi.boolean(),
-  expiryDate: Joi.date().greater(Joi.ref("purchaseDate")).when("hasExpiry", { is: true, then: Joi.required(), otherwise: Joi.optional() }),
-  description: Joi.string().lowercase().trim().empty(""),
-  serialNumber: Joi.string().trim().empty(""),
+  status: Joi.string().valid(...Object.values(ENUMS.ASSET.STATUSES)),
   condition: objectId,
-  warranty: Joi.object({
-    hasWarranty: Joi.boolean().default(false),
-    startDate: Joi.date().when("hasWarranty", {
+  purchaseAmount: Joi.number().positive().min(0),
+  purchaseDate: dateOnly().max("now"),
+  notes: Joi.string().lowercase().trim(),
+  expiry: Joi.object({
+    hasExpiry: Joi.boolean().default(false),
+    expiryDate: dateOnly().when("hasExpiry", {
       is: true,
       then: Joi.required(),
       otherwise: Joi.optional(),
     }),
-    endDate: Joi.date().when("hasWarranty", {
+  }),
+  warranty: Joi.object({
+    hasWarranty: Joi.boolean().default(false),
+    startDate: dateOnly().when("hasWarranty", {
       is: true,
-      then: Joi.date().greater(Joi.ref("startDate")).required(),
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    }),
+    endDate: dateOnly().when("hasWarranty", {
+      is: true,
+      then: dateOnly().greater(Joi.ref("startDate")).required(),
       otherwise: Joi.optional(),
     }),
     provider: objectId,
   }),
 });
 
-exports.createAsset = exports.baseSchema.fork(["category", "subCategory", "purchaseDate"], (schema) => schema.required()).fork("hasExpiry", (schema) => schema.default(false));
+exports.createAsset = exports.baseSchema.fork(["category", "subCategory", "status", "purchaseDate"], (schema) => schema.required());
 
 exports.updateAsset = exports.baseSchema.append({ id: objectId.required() });
 

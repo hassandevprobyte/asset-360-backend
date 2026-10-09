@@ -13,8 +13,6 @@ const queryFilters = (modelName, extraFields = []) => {
     // const queryScope = scopeQueryBuilder(modelName, req.user);
     const queryScope = {};
 
-    console.log(req.query);
-
     const filters = transformQueryParams(modelName, { ...queryScope, ...(req.query.query || {}) }, ["$or", ...extraFields], ["$or", "resource", "field"]);
 
     const andConditions = [];

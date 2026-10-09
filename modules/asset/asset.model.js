@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 // Constants
 const MODELS = require("../../constants/MODELS");
+const ENUMS = require("../../constants/ENUMS");
 
 const warrantySchema = {
   hasWarranty: {
@@ -30,6 +31,24 @@ const warrantySchema = {
     type: mongoose.Schema.Types.ObjectId,
     ref: MODELS.PICKLIST,
   },
+  _id: false,
+};
+
+const expirySchema = {
+  hasExpiry: {
+    type: Boolean,
+    default: false,
+  },
+  expiryDate: {
+    type: Date,
+    required: [
+      function () {
+        return this.hasExpiry;
+      },
+      "Expiry date is required",
+    ],
+  },
+  _id: false,
 };
 
 const schema = new mongoose.Schema(
@@ -39,6 +58,11 @@ const schema = new mongoose.Schema(
       uppercase: true,
       trim: true,
       unique: true,
+    },
+    serialNumber: {
+      type: String,
+      trim: true,
+      index: true,
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,
@@ -61,6 +85,11 @@ const schema = new mongoose.Schema(
       required: [true, "sub category is required"],
     },
     status: {
+      type: String,
+      enum: Object.values(ENUMS.ASSET.STATUSES),
+      required: [true, "status is required"],
+    },
+    condition: {
       type: mongoose.Schema.Types.ObjectId,
       ref: MODELS.PICKLIST,
     },
@@ -71,39 +100,19 @@ const schema = new mongoose.Schema(
       type: Date,
       required: [true, "purchasing date is required"],
     },
-    hasExpiry: {
-      type: Boolean,
-      default: false,
-    },
-    expiryDate: {
-      type: Date,
-      required: [
-        function () {
-          return this.hasExpiry;
-        },
-        "Expiry date is required",
-      ],
-    },
-    description: {
+    notes: {
       type: String,
-      lowercase: true,
       trim: true,
+      lowercase: true,
     },
+    expiry: expirySchema,
+    warranty: warrantySchema,
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
     },
-
-    // TODO: New Fields
-    serialNumber: {
-      type: String,
-      trim: true,
-      index: true,
+    images: {
+      type: [String],
     },
-    condition: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: MODELS.PICKLIST,
-    },
-    warranty: warrantySchema,
   },
   { timestamps: true },
 );

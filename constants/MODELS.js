@@ -1,4 +1,5 @@
 const MODELS = Object.freeze({
+  ACCESS: "Access",
   ASSET: "Asset",
   ATTACHMENT: "Attachment",
   DEPRECIATION: "Depreciation",

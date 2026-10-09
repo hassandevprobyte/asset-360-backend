@@ -7,7 +7,6 @@ const POPULATION_PIPELINE = [
   { path: "subCategory" },
   { path: "status" },
   { path: "condition" },
-  { path: "condition" },
   { path: "warranty", populate: "provider" },
 ];
 
@@ -84,7 +83,7 @@ exports.createAsset = async (payload) => {
 };
 
 exports.updateAssetById = async (assetId, payload) => {
-  return Asset.findByIdAndUpdate(assetId, payload);
+  return Asset.findByIdAndUpdate(assetId, payload, { returnDocument: "after" });
 };
 
 exports.deleteAssetById = async (assetId) => {

@@ -127,7 +127,7 @@ exports.updatePicklist = async (payload) => {
     updatePayload.title = validatedPayload.title;
     updatePayload.value = updatePayload.title.toLowerCase();
   }
-
+ 
   if (validatedPayload.acronym && validatedPayload.acronym !== existingPicklist.acronym) {
     updatePayload.acronym = validatedPayload.acronym;
   }

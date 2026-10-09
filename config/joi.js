@@ -24,3 +24,10 @@ exports.validate = (payload, schema, options) => {
 
   return value;
 };
+
+exports.dateOnly = () =>
+  Joi.date().custom((value) => {
+    value.setUTCHours(0, 0, 0, 0);
+
+    return value;
+  });

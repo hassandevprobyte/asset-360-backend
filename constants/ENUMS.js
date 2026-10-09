@@ -1,4 +1,13 @@
 const ENUMS = {
+  ASSET: {
+    STATUSES: {
+      IN_USE: "in_use",
+      BACKUP: "backup",
+      MAINTENANCE: "maintenance",
+      EXPIRED: "expired",
+      DISPOSED: "disposed",
+    },
+  },
   DEPRECIATION: {
     METHODS: {
       STRAIGHT_LINE: {
