@@ -27,15 +27,18 @@ exports.error = {
     acronymExists: "Brand acronym already exists",
     assignedOnUser: "Brand is assigned on user",
   },
-  depreciation: {
-    notFound: "Depreciation not found",
-    titleExists: "Depreciation already exists",
-  },
   company: {
     notFound: "Company not found",
     titleExists: "Company title already exists",
     acronymExists: "Company acronym already exists",
     assignedOnUser: "Company is assigned on user",
+  },
+  depreciation: {
+    notFound: "Depreciation not found",
+    titleExists: "Depreciation already exists",
+  },
+  maintenance: {
+    notFound: "Maintenance not found",
   },
   picklist: {
     notFound: "Picklist not found",

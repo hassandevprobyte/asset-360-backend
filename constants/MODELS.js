@@ -3,6 +3,7 @@ const MODELS = Object.freeze({
   ASSET: "Asset",
   ATTACHMENT: "Attachment",
   DEPRECIATION: "Depreciation",
+  MAINTENANCE: "Maintenance",
   PICKLIST: "Picklist",
   ROLE: "Role",
 });

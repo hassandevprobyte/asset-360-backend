@@ -30,6 +30,12 @@ const ENUMS = {
       },
     },
   },
+  MAINTENANCE: {
+    STATUSES: {
+      INITIATED: "initiated",
+      COMPLETED: "completed",
+    },
+  },
 };
 
 module.exports = ENUMS;

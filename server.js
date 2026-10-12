@@ -14,11 +14,13 @@ const bootstrap = require("./bootstrap");
 const { corsOptions, env } = require("./config");
 const backup = require("./config/backup");
 const pagination = require("./middleware/pagination");
-const logger = require("./middleware/logger");
+const requestLogger = require("./middleware/requestLogger");
 
 // app.use(helmet());
 
 app.use(cors(corsOptions));
+
+app.use(requestLogger);
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
@@ -30,8 +32,6 @@ app.use(cookieParser());
 app.use(compression());
 
 app.use(pagination);
-
-// app.use(logger);
 
 app.use("/public", express.static(path.join(__dirname, "public")));
 app.use("/api/v1", require("./modules"));
