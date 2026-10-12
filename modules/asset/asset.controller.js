@@ -3,8 +3,14 @@ const asyncHandler = require("express-async-handler");
 // Services
 const assetService = require("./asset.service");
 
-// Scope
-const assetScope = require("./asset.scope");
+// @desc    Get all assets
+// @route   GET /api/v1/assets/all
+// @access  Private
+exports.getAllAssets = asyncHandler(async (req, res) => {
+  const data = await assetService.getAllAssets(req.filters);
+
+  res.status(200).json(data);
+});
 
 // @desc    Get assets with pagination
 // @route   GET /api/v1/assets
@@ -41,8 +47,6 @@ exports.getAssetsSummaryByGroup = asyncHandler(async (req, res) => {
 // @route   GET /api/v1/assets/:id
 // @access  Private
 exports.getAssetById = asyncHandler(async (req, res) => {
-  await assetScope.authorizeByScope(req.user, req.params.id);
-
   const data = await assetService.getAssetById(req.params.id);
 
   res.status(200).json(data);
@@ -52,22 +56,29 @@ exports.getAssetById = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/assets
 // @access  Private
 exports.createAsset = asyncHandler(async (req, res) => {
-  const payload = {
+  const assetPayload = {
+    serialNumber: req.body.serialNumber,
     company: req.body.company,
     location: req.body.location,
     employee: req.body.employee,
     category: req.body.category,
     subCategory: req.body.subCategory,
     status: req.body.status,
+    condition: req.body.condition,
     purchaseAmount: req.body.purchaseAmount,
     purchaseDate: req.body.purchaseDate,
-    hasExpiry: req.body.hasExpiry,
-    expiryDate: req.body.expiryDate,
-    description: req.body.description,
-    createdBy: req.user._id,
+    notes: req.body.notes,
+    expiry: req.body.expiry,
+    warranty: req.body.warranty,
+    // createdBy: req.user._id,
   };
 
-  const data = await assetService.createAsset(payload);
+  const attachmentPayload = {
+    images: req.files?.images,
+    // uploadedBy: req.user._id,
+  };
+
+  const data = await assetService.createAsset(assetPayload, attachmentPayload);
 
   res.status(201).json(data);
 });
@@ -76,24 +87,29 @@ exports.createAsset = asyncHandler(async (req, res) => {
 // @route   PATCH /api/v1/assets/:id
 // @access  Private
 exports.updateAsset = asyncHandler(async (req, res) => {
-  await assetScope.authorizeByScope(req.user, req.params.id);
-
   const payload = {
     id: req.params.id,
+    serialNumber: req.body.serialNumber,
     company: req.body.company,
     location: req.body.location,
     employee: req.body.employee,
     category: req.body.category,
     subCategory: req.body.subCategory,
     status: req.body.status,
+    condition: req.body.condition,
     purchaseAmount: req.body.purchaseAmount,
     purchaseDate: req.body.purchaseDate,
-    hasExpiry: req.body.hasExpiry,
-    expiryDate: req.body.expiryDate,
-    description: req.body.description,
+    notes: req.body.notes,
+    expiry: req.body.expiry,
+    warranty: req.body.warranty,
   };
 
-  const data = await assetService.updateAsset(payload);
+  const attachmentPayload = {
+    images: req.files?.images,
+    // uploadedBy: req.user._id,
+  };
+
+  const data = await assetService.updateAsset(payload, attachmentPayload);
 
   res.status(200).json(data);
 });
@@ -102,8 +118,6 @@ exports.updateAsset = asyncHandler(async (req, res) => {
 // @route   DELETE /api/v1/assets/:id
 // @access  Private
 exports.deleteAsset = asyncHandler(async (req, res) => {
-  await assetScope.authorizeByScope(req.user, req.params.id);
-
   const data = await assetService.deleteAsset(req.params.id);
 
   res.status(200).json(data);

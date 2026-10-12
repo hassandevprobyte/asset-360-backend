@@ -1,6 +1,57 @@
 const mongoose = require("mongoose");
 
-const AssetSchema = new mongoose.Schema(
+// Constants
+const MODELS = require("../../constants/MODELS");
+const ENUMS = require("../../constants/ENUMS");
+
+const warrantySchema = {
+  hasWarranty: {
+    type: Boolean,
+    default: false,
+  },
+  startDate: {
+    type: Date,
+    required: [
+      function () {
+        return this.hasWarranty;
+      },
+      "Start date is required",
+    ],
+  },
+  endDate: {
+    type: Date,
+    required: [
+      function () {
+        return this.hasWarranty;
+      },
+      "End date is required",
+    ],
+  },
+  provider: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: MODELS.PICKLIST,
+  },
+  _id: false,
+};
+
+const expirySchema = {
+  hasExpiry: {
+    type: Boolean,
+    default: false,
+  },
+  expiryDate: {
+    type: Date,
+    required: [
+      function () {
+        return this.hasExpiry;
+      },
+      "Expiry date is required",
+    ],
+  },
+  _id: false,
+};
+
+const schema = new mongoose.Schema(
   {
     tag: {
       type: String,
@@ -8,32 +59,39 @@ const AssetSchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
+    serialNumber: {
+      type: String,
+      trim: true,
+      index: true,
+    },
     company: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
-      required: [true, "company is required"],
     },
     location: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Picklist",
+      ref: MODELS.PICKLIST,
     },
     employee: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Employee",
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Picklist",
+      ref: MODELS.PICKLIST,
       required: [true, "category is required"],
     },
     subCategory: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Picklist",
+      ref: MODELS.PICKLIST,
       required: [true, "sub category is required"],
     },
     status: {
+      type: String,
+      enum: Object.values(ENUMS.ASSET.STATUSES),
+      required: [true, "status is required"],
+    },
+    condition: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Picklist",
+      ref: MODELS.PICKLIST,
     },
     purchaseAmount: {
       type: Number,
@@ -42,41 +100,36 @@ const AssetSchema = new mongoose.Schema(
       type: Date,
       required: [true, "purchasing date is required"],
     },
-    hasExpiry: {
-      type: Boolean,
-      default: false,
-    },
-    expiryDate: {
-      type: Date,
-    },
-    description: {
+    notes: {
       type: String,
-      lowercase: true,
       trim: true,
+      lowercase: true,
     },
+    expiry: expirySchema,
+    warranty: warrantySchema,
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "createdBy is required"],
+    },
+    images: {
+      type: [String],
     },
   },
   { timestamps: true },
 );
 
-AssetSchema.pre("save", async function () {
+schema.pre("save", async function () {
   if (!this.isNew) return;
 
   try {
-    const [company, category, subCategory] = await Promise.all([
-      mongoose.model("Company").findById(this.company, "acronym"),
-      mongoose.model("Picklist").findById(this.category, "acronym"),
-      mongoose.model("Picklist").findById(this.subCategory, "acronym"),
+    const [category, subCategory] = await Promise.all([
+      mongoose.model(MODELS.PICKLIST).findById(this.category, "acronym"),
+      mongoose.model(MODELS.PICKLIST).findById(this.subCategory, "acronym"),
     ]);
 
-    const baseTag = `${company.acronym}-${category.acronym}-${subCategory.acronym}`.toUpperCase();
+    const baseTag = `${category.acronym}-${subCategory.acronym}`.toUpperCase();
 
     const lastAsset = await mongoose
-      .model("Asset")
+      .model(MODELS.ASSET)
       .findOne({ tag: { $regex: new RegExp(`^${baseTag}-\\d+$`) } })
       .sort({ tag: -1 });
 
@@ -98,4 +151,4 @@ AssetSchema.pre("save", async function () {
   }
 });
 
-module.exports = mongoose.model("Asset", AssetSchema);
+module.exports = mongoose.model(MODELS.ASSET, schema);

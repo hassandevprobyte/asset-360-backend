@@ -1,13 +1,13 @@
 const Asset = require("./asset.model");
 
 const POPULATION_PIPELINE = [
-  { path: "company" },
   { path: "location" },
   { path: "employee" },
   { path: "category" },
   { path: "subCategory" },
   { path: "status" },
-  { path: "createdBy" },
+  { path: "condition" },
+  { path: "warranty", populate: "provider" },
 ];
 
 exports.getAllAssets = async (filters) => {
@@ -83,7 +83,7 @@ exports.createAsset = async (payload) => {
 };
 
 exports.updateAssetById = async (assetId, payload) => {
-  return Asset.findByIdAndUpdate(assetId, payload);
+  return Asset.findByIdAndUpdate(assetId, payload, { returnDocument: "after" });
 };
 
 exports.deleteAssetById = async (assetId) => {

@@ -1,4 +1,9 @@
 exports.error = {
+  access: {
+    notFound: "Access not found",
+    userAccessNotFound: "User access not found",
+    userExists: "Access user already exists",
+  },
   asset: {
     notFound: "Asset not found",
   },
@@ -21,6 +26,10 @@ exports.error = {
     titleExists: "Brand title already exists",
     acronymExists: "Brand acronym already exists",
     assignedOnUser: "Brand is assigned on user",
+  },
+  depreciation: {
+    notFound: "Depreciation not found",
+    titleExists: "Depreciation already exists",
   },
   company: {
     notFound: "Company not found",
