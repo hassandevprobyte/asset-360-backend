@@ -6,8 +6,14 @@ const fs = require("fs");
 // Constants
 const COLORS = require("../constants/COLORS");
 
-const logDir = path.join(process.cwd(), "logs");
-fs.mkdirSync(logDir, { recursive: true });
+const LOG_CONFIG = {
+  directory: path.join(process.cwd(), "logs"),
+  rotationPeriod: "YYYY-ww",
+  maxSize: "20m",
+  retention: "28d",
+};
+
+fs.mkdirSync(LOG_CONFIG.directory, { recursive: true });
 
 const levels = {
   error: 0,
@@ -31,12 +37,12 @@ const logFormat = winston.format.combine(
 
 const onlyLevel = (level) => winston.format((info) => (info.level === level ? info : false))();
 
-const createFileTransport = (level, maxFiles = "7d") =>
+const createFileTransport = (level, maxFiles = LOG_CONFIG.retention) =>
   new DailyRotateFile({
-    dirname: logDir,
-    filename: `${level}-%DATE%.log`,
-    datePattern: "YYYY-MM-DD",
-    maxSize: "20m",
+    dirname: LOG_CONFIG.directory,
+    filename: `${level}-%DATE%.csv`,
+    datePattern: LOG_CONFIG.rotationPeriod,
+    maxSize: LOG_CONFIG.maxSize,
     maxFiles,
     level,
     format: winston.format.combine(onlyLevel(level), logFormat),
@@ -52,11 +58,11 @@ const logger = winston.createLogger({
     createFileTransport("info"),
 
     new DailyRotateFile({
-      dirname: logDir,
-      filename: "combined-%DATE%.log",
-      datePattern: "YYYY-MM-DD",
-      maxSize: "20m",
-      maxFiles: "30d",
+      dirname: LOG_CONFIG.directory,
+      filename: "combined-%DATE%.csv",
+      datePattern: LOG_CONFIG.rotationPeriod,
+      maxSize: LOG_CONFIG.maxSize,
+      maxFiles: LOG_CONFIG.retention,
     }),
 
     new winston.transports.Console({
