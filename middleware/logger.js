@@ -2,18 +2,27 @@ const winston = require("winston");
 const DailyRotateFile = require("winston-daily-rotate-file");
 const path = require("path");
 const fs = require("fs");
+const { stringify } = require("csv-stringify/sync");
 
-// Constants
+// Environment Variables
+const { env } = require("../config");
+
+// Constnats
 const COLORS = require("../constants/COLORS");
 
+// Utilities
+const { csvLogFormat, COLUMNS } = require("../utils/csvLogFormat");
+
+const { combine, colorize, simple } = winston.format;
+
 const LOG_CONFIG = {
-  directory: path.join(process.cwd(), "logs"),
-  rotationPeriod: "YYYY-ww",
-  maxSize: "20m",
-  retention: "28d",
+  DIRECTORY: path.join(process.cwd(), "logs"),
+  ROTATION_PERIOD: "YYYY-ww",
+  MAX_SIZE: "20m",
+  RETENTION: "28d",
 };
 
-fs.mkdirSync(LOG_CONFIG.directory, { recursive: true });
+fs.mkdirSync(LOG_CONFIG.DIRECTORY, { recursive: true });
 
 const levels = {
   error: 0,
@@ -27,46 +36,52 @@ winston.addColors({
   info: COLORS.CYAN,
 });
 
-const logFormat = winston.format.combine(
-  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-  winston.format.errors({ stack: true }),
-  winston.format.printf(({ timestamp, level, message, stack }) => {
-    return `${timestamp} [${level.toUpperCase()}]: ${stack || message}`;
-  }),
-);
-
 const onlyLevel = (level) => winston.format((info) => (info.level === level ? info : false))();
 
-const createFileTransport = (level, maxFiles = LOG_CONFIG.retention) =>
+const createFileTransport = (level) =>
   new DailyRotateFile({
-    dirname: LOG_CONFIG.directory,
+    dirname: LOG_CONFIG.DIRECTORY,
     filename: `${level}-%DATE%.csv`,
-    datePattern: LOG_CONFIG.rotationPeriod,
-    maxSize: LOG_CONFIG.maxSize,
-    maxFiles,
+    datePattern: LOG_CONFIG.ROTATION_PERIOD,
+    maxSize: LOG_CONFIG.MAX_SIZE,
+    maxFiles: LOG_CONFIG.RETENTION,
     level,
-    format: winston.format.combine(onlyLevel(level), logFormat),
+    format: combine(onlyLevel(level), csvLogFormat),
   });
+
+const fileTransports = [createFileTransport("error"), createFileTransport("success"), createFileTransport("info")];
+
+for (const transport of fileTransports) {
+  transport.on("new", (filename) => {
+    try {
+      if (fs.existsSync(filename) && fs.statSync(filename).size > 0) {
+        return;
+      }
+
+      fs.writeFileSync(
+        filename,
+        stringify([COLUMNS], {
+          record_delimiter: "unix",
+        }),
+      );
+    } catch (error) {
+      console.error("CSV header error:", error);
+    }
+  });
+
+  transport.on("error", (error) => {
+    console.error("CSV logging error:", error);
+  });
+}
 
 const logger = winston.createLogger({
   levels,
   level: "info",
-  format: logFormat,
   transports: [
-    createFileTransport("error"),
-    createFileTransport("success"),
-    createFileTransport("info"),
-
-    new DailyRotateFile({
-      dirname: LOG_CONFIG.directory,
-      filename: "combined-%DATE%.csv",
-      datePattern: LOG_CONFIG.rotationPeriod,
-      maxSize: LOG_CONFIG.maxSize,
-      maxFiles: LOG_CONFIG.retention,
-    }),
+    ...fileTransports,
 
     new winston.transports.Console({
-      format: winston.format.combine(winston.format.colorize({ all: true }), logFormat),
+      format: combine(colorize({ all: true }), simple()),
     }),
   ],
 });
