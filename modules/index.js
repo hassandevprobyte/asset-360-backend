@@ -14,7 +14,8 @@ const routes = [
   { path: "/assets", resource: MODELS.ASSET, route: require("./asset/asset.route") },
   { path: "/attachments", resource: MODELS.ATTACHMENT, route: require("./attachment/attachment.route") },
   { path: "/depreciations", resource: MODELS.DEPRECIATION, route: require("./depreciation/depreciation.route") },
-  { path: "/maintenance", resource: MODELS.DEPRECIATION, route: require("./maintenance/maintenance.route") },
+  { path: "/maintenance", resource: MODELS.MAINTENANCE, route: require("./maintenance/maintenance.route") },
+  { path: "/notifications", resource: MODELS.NOTIFICATION, route: require("./notification/notification.route") },
   { path: "/picklists", resource: MODELS.PICKLIST, route: require("./picklist/picklist.route") },
   { path: "/roles", resource: MODELS.ROLE, route: require("./role/role.route") },
 ];

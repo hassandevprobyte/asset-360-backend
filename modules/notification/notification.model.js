@@ -47,10 +47,10 @@ const schema = new mongoose.Schema(
       trim: true,
       required: [true, "title is required"],
     },
-    message: {
+    body: {
       type: String,
       trim: true,
-      required: [true, "message is required"],
+      required: [true, "body is required"],
     },
     type: {
       type: String,

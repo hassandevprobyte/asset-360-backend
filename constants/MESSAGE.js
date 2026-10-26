@@ -40,6 +40,9 @@ exports.error = {
   maintenance: {
     notFound: "Maintenance not found",
   },
+  notification: {
+    notFound: "Notification not found",
+  },
   picklist: {
     notFound: "Picklist not found",
     titleExists: "Picklist title already exists",
