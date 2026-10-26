@@ -4,6 +4,7 @@ const MODELS = Object.freeze({
   ATTACHMENT: "Attachment",
   DEPRECIATION: "Depreciation",
   MAINTENANCE: "Maintenance",
+  NOTIFICATION: "Notification",
   PICKLIST: "Picklist",
   ROLE: "Role",
 });

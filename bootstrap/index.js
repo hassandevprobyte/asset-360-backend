@@ -1,3 +1,4 @@
+require("../modules/notification/notification.worker");
 const { connectDB } = require("../config");
 const seed = require("./seed");
 

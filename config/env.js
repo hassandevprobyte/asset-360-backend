@@ -11,6 +11,7 @@ const envSchema = Joi.object({
   CORE_360_API_URL: Joi.string().uri().required(),
   JWT_ACCESS_TOKEN_SECRET: Joi.string().required(),
   JWT_REFRESH_TOKEN_SECRET: Joi.string().required(),
+  REDIS_URL: Joi.string().uri().required(),
   ENCRYPTION_KEY: Joi.string().required(),
 }).unknown(true);
 
@@ -29,6 +30,10 @@ const env = {
   CORE_360_API_URL: envVars.CORE_360_API_URL,
   JWT: {
     ACCESS_TOKEN_SECRET: envVars.JWT_ACCESS_TOKEN_SECRET,
+    REFRESH_TOKEN_SECRET: envVars.JWT_REFRESH_TOKEN_SECRET,
+  },
+  REDIS: {
+    URL: envVars.REDIS_URL,
     REFRESH_TOKEN_SECRET: envVars.JWT_REFRESH_TOKEN_SECRET,
   },
   ENCRYPTION_KEY: envVars.ENCRYPTION_KEY,
