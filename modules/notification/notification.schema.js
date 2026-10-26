@@ -16,8 +16,8 @@ exports.baseSchema = Joi.object({
     .items(
       Joi.object({
         recipient: objectId,
-        readAt: Joi.date(),
-        deletedAt: Joi.date(),
+        readAt: Joi.date().allow(null),
+        deletedAt: Joi.date().allow(null),
       }),
     )
     .min(1),
@@ -34,8 +34,8 @@ exports.createNotification = exports.baseSchema.fork(["recipients"], (schema) =>
     .items(
       Joi.object({
         recipient: objectId.required(),
-        readAt: Joi.date(),
-        deletedAt: Joi.date(),
+        readAt: Joi.date().allow(null),
+        deletedAt: Joi.date().allow(null),
       }),
     )
     .min(1)

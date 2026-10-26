@@ -1,19 +1,20 @@
 const Boom = require("@hapi/boom");
 
 // Queues
-const { inAppNotificationQueue, pushNotificationQueue, emailNotificationQueue } = require("./notification.queue");
+const notificationQueues = require("./notification.queue");
 
 // Constants
 const NOTIFICATION = require("../../constants/NOTIFICATION");
 
 const CHANNEL_QUEUES = {
-  IN_APP: inAppNotificationQueue,
-  PUSH: pushNotificationQueue,
-  EMAIL: emailNotificationQueue,
+  [NOTIFICATION.CHANNELS.IN_APP]: notificationQueues.inAppNotificationQueue,
+  [NOTIFICATION.CHANNELS.PUSH]: notificationQueues.pushNotificationQueue,
+  [NOTIFICATION.CHANNELS.EMAIL]: notificationQueues.emailNotificationQueue,
 };
 
 const EVENT_CHANNELS = {
-  [NOTIFICATION.EVENTS.ASSET_ASSIGNED]: ["IN_APP", "EMAIL", "PUSH"],
+  [NOTIFICATION.EVENTS.ASSET_ASSIGNED]: [...Object.values(NOTIFICATION.CHANNELS)],
+  [NOTIFICATION.EVENTS.ASSET_DELETED]: [NOTIFICATION.CHANNELS.IN_APP],
 };
 
 exports.publish = async (eventName, payload) => {

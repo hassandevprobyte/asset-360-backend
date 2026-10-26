@@ -6,6 +6,9 @@ const attachmentService = require("../attachment/attachment.service");
 // Repositories
 const assetRepository = require("./asset.repository");
 
+// Publishers
+const notificationPublisher = require("../notification/notification.publisher");
+
 // Validations
 const joi = require("../../config");
 const joiSchema = require("./asset.schema");
@@ -25,6 +28,7 @@ const removeUploadedFiles = require("../../utils/removeUploadedFiles");
 
 // Constants
 const MODELS = require("../../constants/MODELS");
+const NOTIFICATION = require("../../constants/NOTIFICATION");
 
 exports.getAllAssets = async (filters) => {
   return assetRepository.getAllAssets(filters);

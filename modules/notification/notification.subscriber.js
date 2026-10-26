@@ -1,3 +1,4 @@
+const Boom = require("@hapi/boom");
 const { Worker } = require("bullmq");
 
 // Config
@@ -5,15 +6,31 @@ const redis = require("../../config/redis");
 
 // Constants
 const QUEUES = require("../../constants/QUEUES");
+const NOTIFICATION = require("../../constants/NOTIFICATION");
 
-// Consumer
-const notificationConsumer = require("./notification.consumer");
+// Handlers
+const handlers = require("./notification.handler");
 
-const createWorker = (queueName) => {
-  const worker = new Worker(
+// Utilities
+const logger = require("../../utils/logger");
+
+const CHANNEL_HANDLERS = {
+  [NOTIFICATION.CHANNELS.IN_APP]: handlers.inAppNotificationHandler,
+  [NOTIFICATION.CHANNELS.PUSH]: handlers.pushNotificationHandler,
+  [NOTIFICATION.CHANNELS.EMAIL]: handlers.emailNotificationHandler,
+};
+
+const createWorker = (queueName, channel) =>
+  new Worker(
     queueName,
     async (job) => {
-      await notificationConsumer.handle(job.data);
+      const handler = CHANNEL_HANDLERS[channel];
+
+      if (typeof handler !== "function") {
+        throw Boom.badRequest(`Invalid notification handler for channel: ${channel}`);
+      }
+
+      return handler(job.data.payload);
     },
     {
       connection: redis,
@@ -21,23 +38,24 @@ const createWorker = (queueName) => {
     },
   );
 
+const workers = [
+  createWorker(QUEUES.IN_APP_NOTIFICATION, NOTIFICATION.CHANNELS.IN_APP),
+  createWorker(QUEUES.PUSH_NOTIFICATION, NOTIFICATION.CHANNELS.PUSH),
+  createWorker(QUEUES.EMAIL_NOTIFICATION, NOTIFICATION.CHANNELS.EMAIL),
+];
+
+workers.forEach((worker) => {
   worker.on("completed", (job) => {
-    console.log(`${queueName}: job ${job.id} completed`);
+    logger.info(`${job.name} completed`);
   });
 
   worker.on("failed", (job, error) => {
-    console.error(`${queueName}: job ${job?.id} failed:`, error.message);
+    logger.error(`${job?.name} failed:`, error.message);
   });
 
-  return worker;
-};
+  worker.on("error", (error) => {
+    logger.error(`Worker error (${worker.name}):`, error.message);
+  });
+});
 
-const inAppWorker = createWorker(QUEUES.IN_APP_NOTIFICATION);
-const pushWorker = createWorker(QUEUES.PUSH_NOTIFICATION);
-const emailWorker = createWorker(QUEUES.EMAIL_NOTIFICATION);
-
-module.exports = {
-  emailWorker,
-  inAppWorker,
-  pushWorker,
-};
+module.exports = workers;
