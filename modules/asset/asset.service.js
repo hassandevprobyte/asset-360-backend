@@ -42,6 +42,33 @@ exports.getAssetsWithPagination = async (payload) => {
 
   const meta = { totalCount, totalPages: Math.ceil(totalCount / pageSize), page, pageSize };
 
+  // await notificationPublisher.publish(NOTIFICATION.EVENTS.ASSET_ASSIGNED, {
+  //   documentId: "6acd00dc487b554ee03d342c",
+  //   documentReference: "Asset",
+  //   recipients: [
+  //     {
+  //       recipient: "6acd00dc487b554ee03d342d",
+  //       readAt: null,
+  //       deletedAt: null,
+  //     },
+  //     {
+  //       recipient: "6acd00dc487b554ee03d3423",
+  //       readAt: null,
+  //       deletedAt: null,
+  //     },
+  //   ],
+  //   title: "Asset Assigned",
+  //   body: "A new asset has been assigned to you.",
+  //   type: NOTIFICATION.TYPES.IN_APP,
+  //   event: NOTIFICATION.EVENTS.ASSET_ASSIGNED,
+  //   actionLink: "/assets/6acd00dc487b554ee03d342c",
+  //   metadata: {
+  //     assetName: "MacBook Pro",
+  //     serialNumber: "MBP-2026-001",
+  //     assignedBy: "John Doe",
+  //   },
+  // });
+
   return { data: assets, meta };
 };
 

@@ -1,4 +1,5 @@
 require("colors");
+const http = require("http");
 const express = require("express");
 const path = require("path");
 const helmet = require("helmet");
@@ -15,6 +16,9 @@ const { corsOptions, env } = require("./config");
 const backup = require("./config/backup");
 const pagination = require("./middleware/pagination");
 const requestLogger = require("./middleware/requestLogger");
+const { socket } = require("./config/socket");
+
+const server = http.createServer(app);
 
 // app.use(helmet());
 
@@ -47,11 +51,13 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
+    socket(server);
+
     await bootstrap();
 
     backup();
 
-    app.listen(env.PORT, () => {
+    server.listen(env.PORT, () => {
       console.log(`Server listening on port ${env.PORT}`.bgWhite.black);
     });
   } catch (error) {
