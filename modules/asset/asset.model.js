@@ -110,9 +110,13 @@ const schema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
     },
-    images: {
-      type: [String],
-    },
+    images: [
+      {
+        _id: false,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: MODELS.ATTACHMENT,
+      },
+    ],
   },
   { timestamps: true },
 );

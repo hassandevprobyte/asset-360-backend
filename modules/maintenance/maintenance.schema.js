@@ -33,5 +33,7 @@ exports.createMaintenance = exports.baseSchema.fork(["asset", "type"], (schema) 
 exports.updateMaintenance = exports.baseSchema
   .append({
     id: objectId.required(),
+    removedBeforeImages: Joi.array().items(objectId).unique(),
+    removedAfterImages: Joi.array().items(objectId).unique(),
   })
   .fork("createdBy", (schema) => schema.strip());

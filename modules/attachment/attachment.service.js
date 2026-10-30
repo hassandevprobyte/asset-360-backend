@@ -55,6 +55,24 @@ exports.deleteAttachment = async (attachmentId) => {
   return { deletedId: attachmentId };
 };
 
+exports.deleteAttachments = async (attachmentIds) => {
+  joi.validate(attachmentIds, joiSchema.getAttachmentsByIds);
+
+  const attachments = await attachmentValidation.throwErrorIfAnyAttachmentDoesNotExist(attachmentIds);
+
+  for (const attachment of attachments) {
+    try {
+      await fs.unlink(attachment.filePath);
+    } catch (err) {
+      if (err.code !== "ENOENT") throw err;
+    }
+  }
+
+  await attachmentRepository.bulkDeleteAttachmentsByIds(attachmentIds);
+
+  return { deletedIds: attachmentIds };
+};
+
 exports.deleteAttachmentsByResource = async (resource, resourceId) => {
   const attachments = await attachmentRepository.getAttachmentsByResource(resource, resourceId);
 

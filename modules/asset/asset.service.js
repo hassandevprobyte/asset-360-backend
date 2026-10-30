@@ -17,6 +17,7 @@ const picklistValidation = require("../picklist/picklist.validation");
 
 // Helpers
 const assetHelpers = require("./asset.helper");
+const attachmentHelpers = require("../attachment/attachment.helper");
 
 // Utilities
 const excel = require("../../utils/excel");
@@ -126,15 +127,16 @@ exports.createAsset = async (payload, attachmentPayload) => {
     const asset = await assetRepository.createAsset(validatedPayload);
 
     const updatePayload = {};
+
     if (attachmentPayload?.images?.length) {
-      await attachmentService.addAttachments({
+      await attachmentHelpers.buildAttachmentUpdate({
+        update: updatePayload,
+        field: "images",
         resource: MODELS.ASSET,
         resourceId: asset._id,
-        files: attachmentPayload.images,
-        uploadedBy: attachmentPayload.uploadedBy,
+        files: attachmentPayload?.images,
+        uploadedBy: attachmentPayload?.uploadedBy,
       });
-
-      updatePayload.$set = { images: attachmentPayload.images.map((image) => image.path) };
     }
 
     if (!Object.keys(updatePayload).length) return asset;
@@ -206,7 +208,7 @@ exports.updateAsset = async (payload, attachmentPayload) => {
       updatePayload.condition = validatedPayload.condition;
     }
 
-    if (validatedPayload.hasOwnProperty("purchaseAmount") && validatedPayload.purchaseAmount !== existingAsset?.purchaseAmount) {
+    if (validatedPayload.purchaseAmount !== undefined && validatedPayload.purchaseAmount !== existingAsset?.purchaseAmount) {
       updatePayload.purchaseAmount = validatedPayload.purchaseAmount;
     }
 
@@ -242,18 +244,16 @@ exports.updateAsset = async (payload, attachmentPayload) => {
       }
     }
 
-    if (attachmentPayload?.images) {
-      await attachmentService.deleteAttachmentsByResource(MODELS.ASSET, existingAsset._id);
-
-      await attachmentService.addAttachments({
-        resource: MODELS.ASSET,
-        resourceId: existingAsset._id,
-        files: attachmentPayload.images,
-        uploadedBy: attachmentPayload.uploadedBy,
-      });
-
-      updatePayload.$set = { images: attachmentPayload.images.map((image) => image.path) };
-    }
+    await attachmentHelpers.buildAttachmentUpdate({
+      update: updatePayload,
+      field: "images",
+      resource: MODELS.ASSET,
+      resourceId: existingAsset?._id,
+      removedIds: validatedPayload.removedImages,
+      files: attachmentPayload?.images,
+      uploadedBy: attachmentPayload?.uploadedBy,
+      existingIds: (existingAsset?.images || []).map((attachment) => String(attachment._id)),
+    });
 
     if (!Object.keys(updatePayload).length) return existingAsset;
 

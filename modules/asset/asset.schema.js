@@ -44,7 +44,7 @@ exports.baseSchema = Joi.object({
 
 exports.createAsset = exports.baseSchema.fork(["category", "subCategory", "status", "purchaseDate"], (schema) => schema.required());
 
-exports.updateAsset = exports.baseSchema.append({ id: objectId.required() });
+exports.updateAsset = exports.baseSchema.append({ id: objectId.required(), removedImages: Joi.array().items(objectId).unique() });
 
 exports.getAssetsSummaryByGroup = Joi.object({
   filters: Joi.object().default({}).optional(),

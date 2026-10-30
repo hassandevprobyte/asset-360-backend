@@ -6,6 +6,8 @@ const MODELS = require("../../constants/MODELS");
 
 exports.getAttachmentById = objectId.required();
 
+exports.getAttachmentsByIds = Joi.array().items(objectId).unique();
+
 exports.addAttachments = Joi.object({
   resource: Joi.string()
     .valid(...Object.values(MODELS))

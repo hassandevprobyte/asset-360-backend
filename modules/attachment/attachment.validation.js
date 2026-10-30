@@ -30,3 +30,13 @@ exports.throwErrorIfResourceDoesNotExist = async (resource, resourceId) => {
     throw Boom.conflict(message.error.attachment.resourceNotFound(resource));
   }
 };
+
+exports.throwErrorIfAnyAttachmentDoesNotExist = async (attachmentIds) => {
+  const attachments = await attachmentRepository.getAttachmentsByIds(attachmentIds);
+
+  if (attachments.length !== attachmentIds.length) {
+    throw Boom.notFound(message.error.attachment.notFound);
+  }
+
+  return attachments;
+};

@@ -67,12 +67,20 @@ const schema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
     },
-    conditionBefore: {
-      type: [String],
-    },
-    conditionAfter: {
-      type: [String],
-    },
+    beforeImages: [
+      {
+        _id: false,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: MODELS.ATTACHMENT,
+      },
+    ],
+    afterImages: [
+      {
+        _id: false,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: MODELS.ATTACHMENT,
+      },
+    ],
   },
   {
     timestamps: true,

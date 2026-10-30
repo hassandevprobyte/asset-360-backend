@@ -8,6 +8,8 @@ const POPULATION_PIPELINE = [
   { path: "vendor" },
   { path: "checklist", populate: { path: "item" } },
   { path: "checklist", populate: { path: "condition" } },
+  { path: "beforeImages" },
+  { path: "afterImages" },
 ];
 
 exports.getAllMaintenance = async (filters) => {

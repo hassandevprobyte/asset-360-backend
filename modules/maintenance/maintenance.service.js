@@ -13,6 +13,9 @@ const assetValidation = require("../asset/asset.validation");
 const maintenanceValidation = require("./maintenance.validation");
 const picklistValidation = require("../picklist/picklist.validation");
 
+// Helpers
+const attachmentHelpers = require("../attachment/attachment.helper");
+
 // Constants
 const MODELS = require("../../constants/MODELS");
 
@@ -77,26 +80,19 @@ exports.createMaintenance = async (payload, attachmentPayload) => {
     const maintenance = await maintenanceRepository.createMaintenance(validatedPayload);
 
     const updatePayload = {};
-    if (attachmentPayload?.conditionBefore?.length) {
-      await attachmentService.addAttachments({
-        resource: MODELS.MAINTENANCE,
-        resourceId: maintenance._id,
-        files: attachmentPayload.conditionBefore,
-        uploadedBy: attachmentPayload.uploadedBy,
-      });
+    const attachmentTypes = ["beforeImages", "afterImages"];
 
-      updatePayload.conditionBefore = attachmentPayload.conditionBefore.map((file) => file.path);
-    }
-
-    if (attachmentPayload?.conditionAfter?.length) {
-      await attachmentService.addAttachments({
-        resource: MODELS.MAINTENANCE,
-        resourceId: maintenance._id,
-        files: attachmentPayload.conditionAfter,
-        uploadedBy: attachmentPayload.uploadedBy,
-      });
-
-      updatePayload.conditionAfter = attachmentPayload.conditionAfter.map((file) => file.path);
+    for (const attachmentType of attachmentTypes) {
+      if (attachmentPayload?.[attachmentType]?.length) {
+        await attachmentHelpers.buildAttachmentUpdate({
+          update: updatePayload,
+          field: attachmentType,
+          resource: MODELS.MAINTENANCE,
+          resourceId: maintenance._id,
+          files: attachmentPayload[attachmentType],
+          uploadedBy: attachmentPayload.uploadedBy,
+        });
+      }
     }
 
     if (!Object.keys(updatePayload).length) return maintenance;
@@ -175,20 +171,31 @@ exports.updateMaintenance = async (payload, attachmentPayload) => {
       updatePayload.checklist = validatedPayload.checklist;
     }
 
-    if (attachmentPayload.conditionBefore || attachmentPayload.conditionAfter) {
-      await attachmentService.deleteAttachmentsByResource(MODELS.MAINTENANCE, existingMaintenance._id);
+    const updatedAttachments = [
+      {
+        field: "beforeImages",
+        removeLabel: "removedBeforeImages",
+      },
+      {
+        field: "afterImages",
+        removeLabel: "removedAfterImages",
+      },
+    ];
 
-      await attachmentService.addAttachments({
+    for (const attachment of updatedAttachments) {
+      const updatedFiles = attachmentPayload[attachment.field] || [];
+      const existingFiles = existingMaintenance[attachment.field] || [];
+
+      await attachmentHelpers.buildAttachmentUpdate({
+        update: updatePayload,
+        field: attachment.field,
         resource: MODELS.MAINTENANCE,
-        resourceId: existingMaintenance._id,
-        files: [...(attachmentPayload?.conditionBefore || []), ...(attachmentPayload?.conditionAfter || [])],
-        uploadedBy: attachmentPayload.uploadedBy,
+        resourceId: existingMaintenance?._id,
+        removedIds: validatedPayload[attachment.removeLabel],
+        files: updatedFiles,
+        uploadedBy: attachmentPayload?.uploadedBy,
+        existingIds: existingFiles.map((attachment) => String(attachment._id)),
       });
-
-      updatePayload.$set = {
-        conditionBefore: (attachmentPayload.conditionBefore || []).map((image) => image.path),
-        conditionAfter: (attachmentPayload.conditionAfter || []).map((image) => image.path),
-      };
     }
 
     if (!Object.keys(updatePayload).length) return existingMaintenance;

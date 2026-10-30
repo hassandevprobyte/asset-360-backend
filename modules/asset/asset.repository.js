@@ -5,9 +5,9 @@ const POPULATION_PIPELINE = [
   { path: "employee" },
   { path: "category" },
   { path: "subCategory" },
-  { path: "status" },
   { path: "condition" },
   { path: "warranty", populate: "provider" },
+  { path: "images" },
 ];
 
 exports.getAllAssets = async (filters) => {

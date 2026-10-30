@@ -102,6 +102,7 @@ exports.updateAsset = asyncHandler(async (req, res) => {
     notes: req.body.notes,
     expiry: req.body.expiry,
     warranty: req.body.warranty,
+    removedImages: req.body.removedImages,
   };
 
   const attachmentPayload = {
