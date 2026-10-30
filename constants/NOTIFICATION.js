@@ -1,4 +1,4 @@
-module.exports = {
+module.exports = Object.freeze({
   TYPES: {
     IN_APP: "in_app",
     PUSH: "push",
@@ -13,4 +13,4 @@ module.exports = {
     ASSET_ASSIGNED: "asset.assigned",
     ASSET_DELETED: "asset.deleted",
   },
-};
+});

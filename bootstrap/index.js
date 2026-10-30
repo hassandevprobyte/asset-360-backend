@@ -1,9 +1,9 @@
-require("../modules/notification/notification.worker");
 const { connectDB } = require("../config");
 const seed = require("./seed");
 
 const bootstrap = async () => {
   await connectDB();
+  require("../modules/notification/notification.worker");
 
   await seed.seedSuperAdmin();
   await seed.seedDefaultPicklists();

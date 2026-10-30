@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 const MODELS = require("../../constants/MODELS");
 const NOTIFICATION = require("../../constants/NOTIFICATION");
 
-// Recipients Schema
 const recipientsSchema = {
   _id: false,
   recipient: {
@@ -21,7 +20,6 @@ const recipientsSchema = {
   },
 };
 
-// Notification Schema
 const schema = new mongoose.Schema(
   {
     documentId: {
